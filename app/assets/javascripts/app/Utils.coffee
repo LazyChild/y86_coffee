@@ -29,10 +29,10 @@ define ->
         (b >> 4) & 0xf
 
     gen: (enviroment) ->
-        reg: enviroment.reg[..]
-        memory: enviroment.memory[..]
+        reg: enviroment.reg.splice(0)
+        memory: enviroment.memory.splice(0)
         variables: {}
-        cc: enviroment.cc[..]
+        cc: enviroment.cc.splice(0)
 
     getWord: (memory, address) ->
         a = memory[address]

@@ -5,7 +5,7 @@ define ['./Utils'], (Utils) ->
             reg: [0, 0, 0, 0, 0, 0, 0, 0]
             memory: []
             variables: {}
-            cc: []
+            cc: [0, 0, 0]
         # Load the *.yo file from the text.
         constructor: (text) ->
             lines = text.split '\n'
@@ -93,29 +93,47 @@ define ['./Utils'], (Utils) ->
             elements:   ['F_predPC']
             from:       ['f_predPC']
         decodePipe =
-            op: P_LOAD
+            op: P_BUBBLE
             elements:   ['D_icode', 'D_ifun', 'D_rA', 'D_rB', 'D_valC', 'D_valP', 'D_stat']
             from:       ['f_icode', 'f_ifun', 'f_rA', 'f_rB', 'f_valC', 'f_valP', 'f_stat']
+            bubble:     [I_NOP, F_NONE, REG_NONE, REG_NONE, 0, 0, STAT_BUB]
         executePipe =
-            op: P_LOAD
+            op: P_BUBBLE
             elements:   ['E_icode', 'E_ifun', 'E_valC', 'E_valA', 'E_valB', 'E_dstE', 'E_dstM', 'E_srcA', 'E_srcB', 'E_stat']
             from:       ['D_icode', 'D_ifun', 'D_valC', 'd_valA', 'd_valB', 'd_dstE', 'd_dstM', 'd_srcA', 'd_srcB', 'D_stat']
+            bubble:     [I_NOP, F_NONE, 0, 0, 0, REG_NONE, REG_NONE, REG_NONE, REG_NONE, STAT_BUB]
         memoryPipe =
-            op: P_LOAD
+            op: P_BUBBLE
             elements:   ['M_icode', 'M_Cnd', 'M_valE', 'M_valA', 'M_dstE', 'M_dstM', 'M_stat']
             from:       ['E_icode', 'e_Cnd', 'e_valE', 'E_valA', 'e_dstE', 'E_dstM', 'E_stat']
+            bubble:     [I_NOP, false, 0, 0, REG_NONE, REG_NONE, STAT_BUB]
         writebackPipe =
-            op: P_LOAD
+            op: P_BUBBLE
             elements:   ['W_icode', 'W_valE', 'W_valM', 'W_dstE', 'W_dstM', 'W_stat']
             from:       ['M_icode', 'M_valE', 'm_valM', 'M_dstE', 'M_dstM', 'm_stat']
+            bubble:     [I_NOP, 0, 0, REG_NONE, REG_NONE, STAT_BUB]
 
         n2h = Utils.num2hex
         hpack = Utils.hexPack
 
-        performStep = ->
+        doReport: (cycle) ->
+            now = @cycles[cycle]
+            v = now.variables
+            [ZF, SF, OF] = now.cc
+            @report.push "Cycle #{n}. CC=Z=#{ZF} S=#{SF} O=#{OF}, STAT=#{sname[status]}"
+            @report.push "F: predPC = #{n2h(v.F_predPC)}"
+            @report.push "D: instr = #{iname[hpack(v.D_icode, v.D_ifun)]}, rA = #{rname[v.D_rA]}, rB = #{rname[v.D_rB]}, valC = #{n2h(v.D_valC, -1)}, Stat = #{sname[v.D_stat]}"
+            @report.push "E: instr = #{iname[hpack(v.E_icode, v.E_ifun)]}, valC = #{n2h(v.E_valC, -1)}, valA = #{n2h(v.E_valA, -1)}, valB = #{n2h(v.E_valB, -1)}"
+            @report.push "   srcA = #{rname[v.E_srcA]}, srcB = #{rname[v.E_srcB]}, dstE = #{rname[v.E_dstE]}, dstM = #{rname[v.E_dstM]}, Stat = #{sname[v.E_stat]}"
+            @report.push "M: instr = #{iname[hpack(v.M_icode, v.M_ifun)]}, Cnd = #{v.M_Bch}, valE = #{n2h(v.M_valE, -1)}, valA = #{n2h(v.M_valA, -1)}"
+            @report.push "   dstE = #{rname[v.M_dstE]}, dstM = #{rname[v.M_dstM]}, Stat = #{sname[v.M_stat]}"
+            @report.push "W: instr = #{iname[hpack(v.W_icode, v.W_ifun)]}, valE = #{n2h(v.W_valE, -1)}, valM = #{n2h(v.W_valM, -1)}, dstE = #{rname[v.W_dstE]}, dstM = #{rname[v.W_dstM]}, Stat = #{sname[v.W_stat]}"
+            @report.push ""
+
+        performStep: ->
             n = @cycles.length
             prev = @cycles[n - 1]
-            @cycles[n] = prev.gen()
+            @cycles[n] = Utils.gen(prev)
             now = @cycles[n]
             v = now.variables
 
@@ -125,10 +143,11 @@ define ['./Utils'], (Utils) ->
                 for i in [0, pipe.elements - 1]
                     v[pipe.elements[i]] = prev.variables[pipe.from[i]]
             stall = (pipe) ->
-                for v in pipe.elements
+                for key in pipe.elements
                     v[key] = prev.variables[key]
             bubble = (pipe) ->
-                # Do nothing
+                for i in [0, pipe.elements - 1]
+                    v[pipe.elements[i]] = pipe.bubble[i]
 
             updatePipe =(pipe) ->
                 # 'LOAD' then load new value, 'STALL' then keep old value, 'BUBBLE' then no value
@@ -136,19 +155,7 @@ define ['./Utils'], (Utils) ->
                     when P_LOAD then load(pipe)
                     when P_STALL then stall(pipe)
                     when P_BUBBLE then bubble(pipe)
-
-            doReport = ->
-                [ZF, SF, OF] = now.cc
-                cc_str = "Z=#{ZF} S=#{SF} O=#{OF}"
-                @report.add "Cycle #{n}. CC=#{cc_str}, STAT=#{sname[status]}"
-                @report.add "F: predPC = #{n2h(v.F_predPC)}"
-                @report.add "D: instr = #{iname[hpack(v.D_icode, v.D_ifun)]}, rA = #{rname[v.D_rA]}, rB = #{rname[v.D_rB]}, valC = #{n2h(v.D_valC, -1)}, Stat = #{v.D_stat}"
-                @report.add "E: instr = #{iname[hpack(v.E_icode, v.E_ifun)]}, valC = #{n2h(v.E_valC, -1)}, valA = #{n2h(v.E_valA, -1)}, valB = #{n2h(v.E_valB, -1)}"
-                @report.add "   srcA = #{rname[v.E_srcA]}, srcB = #{rname[v.E_srcB]}, dstE = #{rname[v.E_dstE]}, dstM = #{rname[v.E_dstM]}, Stat = #{v.E_stat}"
-                @report.add "M: instr = #{iname[hpack(v.M_icode, v.M_ifun)]}, Cnd = #{v.M_Bch}, valE = #{n2h(v.M_valE, -1)}, valA = #{n2h(v.M_valA, -1)}"
-                @report.add "   dstE = #{rname[v.M_dstE]}, dstM = #{rname[v.M_dstM]}, Stat = #{v.M_stat}"
-                @report.add "W: instr = #{iname[hpack(v.W_icode, v.W_ifun)]}, valE = #{n2h(v.W_valE, -1)}, valM = #{n2h(v.W_valM, -1)}, dstE = #{rname[v.W_dstE]}, dstM = #{rname[v.W_dstM]}, Stat = #{v.W_stat}"
-                @report.add ""
+                    when P_ERROR then bubble(pipe)
 
             ################################### Perform the fetch stage ######################################
             doFetchStage = ->
@@ -157,7 +164,7 @@ define ['./Utils'], (Utils) ->
                 # Get f_pc
                 v.f_pc =
                     if v.M_icode is I_JXX and not v.M_Cnd then v.M_valA
-                    else if v.W_icode is I_RET v.W_valM
+                    else if v.W_icode is I_RET then v.W_valM
                     else v.F_predPC
                 v.f_valP = v.f_pc
 
@@ -280,13 +287,13 @@ define ['./Utils'], (Utils) ->
                     if v.E_icode is I_OPL then v.E_ifun
                     else ALU_ADD
 
-                int = (v) -> v | 0
+                i = (v) -> v | 0
 
                 # Compute the alu value.
                 compute_alu = (aluA, aluB, alufun) ->
                     switch alufun
-                        when ALU_ADD then int(aluA + aluB)
-                        when ALU_SUB then int(aluA - aluB)
+                        when ALU_ADD then i(aluA + aluB)
+                        when ALU_SUB then i(aluA - aluB)
                         when ALU_AND then aluA & aluB
                         when ALU_XOR then aluA ^ aluB
 
@@ -296,9 +303,9 @@ define ['./Utils'], (Utils) ->
                 compute_cc = (aluA, aluB, alufun) ->
                     val = compute_alu(aluA, aluB, alufun)
                     ZF = val is 0
-                    SF = int(val) < 0
+                    SF = i(val) < 0
                     gen_of = ->
-                        sign = (v) -> int(v) < 0
+                        sign = (v) -> i(v) < 0
                         switch alufun
                             when ALU_ADD
                                 (sign(aluA) is sign(aluB)) and (sign(val) isnt sign(aluB))
@@ -422,9 +429,13 @@ define ['./Utils'], (Utils) ->
 
             checkStageOp()
 
-            doReport()
+            @doReport(n)
 
         run: ->
+            icount = 0
+            ccount = 0
             loop
-                result = performStep()
-            break if result isnt STAT_AOK and result isnt STAT_BUB
+                run_stat = @performStep()
+                ++icount if run_stat isnt STAT_BUB
+                ++ccount
+                break if run_stat isnt STAT_AOK and run_stat isnt STAT_BUB

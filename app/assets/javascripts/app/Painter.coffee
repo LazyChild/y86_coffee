@@ -133,7 +133,7 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             stage.addNameRect 30
             stage.addRect 30, colors.white, 'icode'
             stage.addRect 30, colors.blue
-            stage.addRect 30, colors.white, 'Bch'
+            stage.addRect 30, colors.white, 'Cnd'
             stage.addRect 20, colors.blue
             stage.addRect 70, colors.white, 'valE'
             stage.addRect 70, colors.white, 'valA'
