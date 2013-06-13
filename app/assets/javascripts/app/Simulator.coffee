@@ -32,6 +32,7 @@ define ['./Utils'], (Utils) ->
 
         iname = {}
         rname = {}
+        sname = {}
 
         # Represents the value
         I_NOP       = 0x0;      iname[I_NOP     << 4]           = 'nop'
@@ -80,12 +81,12 @@ define ['./Utils'], (Utils) ->
         P_BUBBLE    = 2
         P_ERROR     = 3
 
-        STAT_BUB    = 0
-        STAT_AOK    = 1
-        STAT_HLT    = 2
-        STAT_ADR    = 3
-        STAT_INS    = 4
-        STAT_PIP    = 5
+        STAT_BUB    = 0;        sname[STAT_BUB] = 'BUB'
+        STAT_AOK    = 1;        sname[STAT_AOK] = 'AOK'
+        STAT_HLT    = 2;        sname[STAT_HLT] = 'HLT'
+        STAT_ADR    = 3;        sname[STAT_ADR] = 'ADR'
+        STAT_INS    = 4;        sname[STAT_INS] = 'INS'
+        STAT_PIP    = 5;        sname[STAT_PIP] = 'PIP'
 
         fetchPipe =
             op: P_LOAD
@@ -139,7 +140,7 @@ define ['./Utils'], (Utils) ->
             doReport = ->
                 [ZF, SF, OF] = now.cc
                 cc_str = "Z=#{ZF} S=#{SF} O=#{OF}"
-                @report.add "Cycle #{n}. CC=#{cc_str}, STAT=#{now.status}"
+                @report.add "Cycle #{n}. CC=#{cc_str}, STAT=#{sname[status]}"
                 @report.add "F: predPC = #{n2h(v.F_predPC)}"
                 @report.add "D: instr = #{iname[hpack(v.D_icode, v.D_ifun)]}, rA = #{rname[v.D_rA]}, rB = #{rname[v.D_rB]}, valC = #{n2h(v.D_valC, -1)}, Stat = #{v.D_stat}"
                 @report.add "E: instr = #{iname[hpack(v.E_icode, v.E_ifun)]}, valC = #{n2h(v.E_valC, -1)}, valA = #{n2h(v.E_valA, -1)}, valB = #{n2h(v.E_valB, -1)}"
@@ -403,6 +404,17 @@ define ['./Utils'], (Utils) ->
                 writebackPipe.op = pipe_control("write-back", W_stall, W_bubble)
 
             ### main perform step ###
+            if fetchPipe.op is P_ERROR
+                v.F_stat = STAT_PIP
+            if decodePipe.op is P_ERROR
+                v.D_stat = STAT_PIP
+            if executePipe.op is P_ERROR
+                v.E_stat = STAT_PIP
+            if memoryPipe.op is P_ERROR
+                v.M_stat = STAT_PIP
+            if writebackPipe.op is P_ERROR
+                v.W_stat = STAT_PIP
+
             doFetchStage()
             doExecuteStage()
             doMemoryStage()
