@@ -1,28 +1,30 @@
 # The pipeline follows the CSAPP:2nd edition
 define ['./Utils'], (Utils) ->
     class
-        enviroment =
-            reg: [0, 0, 0, 0, 0, 0, 0, 0]
-            memory: []
-            variables: {}
-            cc: [0, 0, 0]
         # Load the *.yo file from the text.
         constructor: (text) ->
-            lines = text.split '\n'
-            @cycles[0] = Utils.gen enviroment
+            lines = text.split('\n')
+            enviroment =
+                reg: [0, 0, 0, 0, 0, 0, 0, 0]
+                memory: []
+                variables: {}
+                cc: [false, false, false]
+            @cycles.splice(0)
+            @report.splice(0)
+            @cycles.push(Utils.gen(enviroment))
+            @cycles[0].variables.f_predPC = 0
             for line in lines
-                part = line.trim().split '|'
+                part = line.trim().split('|')
                 if part.length isnt 2 then return null
 
                 if part[0] is '' then continue
-                words = part[0].trim().split /:\s?/
+                words = part[0].trim().split(/:\s?/)
                 if words.length isnt 2 then return null
                 if words[1] is '' then continue
 
-                address = Utils.hex2num words[0]
+                address = Utils.hex2num(words[0])
                 for i in [0..words[1].length - 1] by 2
-                    @cycles[0].memory[address++] = Utils.hex2num words[1][i] + words[1][i + 1]
-            @
+                    @cycles[0].memory[address++] = Utils.hex2num(words[1][i] + words[1][i + 1])
 
         # Represents the cycles.
         cycles: []
@@ -33,6 +35,7 @@ define ['./Utils'], (Utils) ->
         iname = {}
         rname = {}
         sname = {}
+        oname = {}
 
         # Represents the value
         I_NOP       = 0x0;      iname[I_NOP     << 4]           = 'nop'
@@ -44,10 +47,10 @@ define ['./Utils'], (Utils) ->
 
         I_OPL       = 0x6
         # ALU functions
-        ALU_ADD     = 0x0;      iname[(I_OPL << 4) + ALU_ADD]   = 'addl'
-        ALU_SUB     = 0x1;      iname[(I_OPL << 4) + ALU_SUB]   = 'subl'
-        ALU_AND     = 0x2;      iname[(I_OPL << 4) + ALU_AND]   = 'andl'
-        ALU_XOR     = 0x3;      iname[(I_OPL << 4) + ALU_XOR]   = 'xorl'
+        ALU_ADD     = 0x0;      iname[(I_OPL << 4) + ALU_ADD]   = 'addl';   oname[ALU_ADD] = '+'
+        ALU_SUB     = 0x1;      iname[(I_OPL << 4) + ALU_SUB]   = 'subl';   oname[ALU_SUB] = '-'
+        ALU_AND     = 0x2;      iname[(I_OPL << 4) + ALU_AND]   = 'andl';   oname[ALU_AND] = '&'
+        ALU_XOR     = 0x3;      iname[(I_OPL << 4) + ALU_XOR]   = 'xorl';   oname[ALU_XOR] = '^'
 
         I_JXX       = 0x7
         # Jumps
@@ -104,54 +107,61 @@ define ['./Utils'], (Utils) ->
             bubble:     [I_NOP, F_NONE, 0, 0, 0, REG_NONE, REG_NONE, REG_NONE, REG_NONE, STAT_BUB]
         memoryPipe =
             op: P_BUBBLE
-            elements:   ['M_icode', 'M_Cnd', 'M_valE', 'M_valA', 'M_dstE', 'M_dstM', 'M_stat']
-            from:       ['E_icode', 'e_Cnd', 'e_valE', 'E_valA', 'e_dstE', 'E_dstM', 'E_stat']
-            bubble:     [I_NOP, false, 0, 0, REG_NONE, REG_NONE, STAT_BUB]
+            elements:   ['M_icode', 'M_ifun', 'M_Cnd', 'M_valE', 'M_valA', 'M_dstE', 'M_dstM', 'M_stat']
+            from:       ['E_icode', 'E_ifun', 'e_Cnd', 'e_valE', 'E_valA', 'e_dstE', 'E_dstM', 'E_stat']
+            bubble:     [I_NOP, F_NONE, false, 0, 0, REG_NONE, REG_NONE, STAT_BUB]
         writebackPipe =
             op: P_BUBBLE
-            elements:   ['W_icode', 'W_valE', 'W_valM', 'W_dstE', 'W_dstM', 'W_stat']
-            from:       ['M_icode', 'M_valE', 'm_valM', 'M_dstE', 'M_dstM', 'm_stat']
-            bubble:     [I_NOP, 0, 0, REG_NONE, REG_NONE, STAT_BUB]
+            elements:   ['W_icode', 'W_ifun', 'W_valE', 'W_valM', 'W_dstE', 'W_dstM', 'W_stat']
+            from:       ['M_icode', 'M_ifun', 'M_valE', 'm_valM', 'M_dstE', 'M_dstM', 'm_stat']
+            bubble:     [I_NOP, F_NONE, 0, 0, REG_NONE, REG_NONE, STAT_BUB]
 
         n2h = Utils.num2hex
         hpack = Utils.hexPack
 
-        doReport: (cycle) ->
-            now = @cycles[cycle]
+        doReport: (n) ->
+            if n is 0 then return
+            now = @cycles[n]
             v = now.variables
             [ZF, SF, OF] = now.cc
-            @report.push "Cycle #{n}. CC=Z=#{ZF} S=#{SF} O=#{OF}, STAT=#{sname[status]}"
+            @report.push "Cycle #{n - 1}. cc = Z=#{ZF} S=#{SF} O=#{OF}, STAT=#{sname[status]}"
             @report.push "F: predPC = #{n2h(v.F_predPC)}"
-            @report.push "D: instr = #{iname[hpack(v.D_icode, v.D_ifun)]}, rA = #{rname[v.D_rA]}, rB = #{rname[v.D_rB]}, valC = #{n2h(v.D_valC, -1)}, Stat = #{sname[v.D_stat]}"
+            @report.push "D: instr = #{iname[hpack(v.D_icode, v.D_ifun)]}, rA = #{rname[v.D_rA]}, rB = #{rname[v.D_rB]}, valC = #{n2h(v.D_valC, -1)}, valP = #{n2h(v.D_valP, -1)}, Stat = #{sname[v.D_stat]}"
             @report.push "E: instr = #{iname[hpack(v.E_icode, v.E_ifun)]}, valC = #{n2h(v.E_valC, -1)}, valA = #{n2h(v.E_valA, -1)}, valB = #{n2h(v.E_valB, -1)}"
             @report.push "   srcA = #{rname[v.E_srcA]}, srcB = #{rname[v.E_srcB]}, dstE = #{rname[v.E_dstE]}, dstM = #{rname[v.E_dstM]}, Stat = #{sname[v.E_stat]}"
-            @report.push "M: instr = #{iname[hpack(v.M_icode, v.M_ifun)]}, Cnd = #{v.M_Bch}, valE = #{n2h(v.M_valE, -1)}, valA = #{n2h(v.M_valA, -1)}"
+            @report.push "M: instr = #{iname[hpack(v.M_icode, v.M_ifun)]}, Cnd = #{v.M_Cnd}, valE = #{n2h(v.M_valE, -1)}, valA = #{n2h(v.M_valA, -1)}"
             @report.push "   dstE = #{rname[v.M_dstE]}, dstM = #{rname[v.M_dstM]}, Stat = #{sname[v.M_stat]}"
             @report.push "W: instr = #{iname[hpack(v.W_icode, v.W_ifun)]}, valE = #{n2h(v.W_valE, -1)}, valM = #{n2h(v.W_valM, -1)}, dstE = #{rname[v.W_dstE]}, dstM = #{rname[v.W_dstM]}, Stat = #{sname[v.W_stat]}"
             @report.push ""
 
+        log: (n, message) ->
+            if n is 1 then return
+            @report.push message
+
         performStep: ->
             n = @cycles.length
             prev = @cycles[n - 1]
-            @cycles[n] = Utils.gen(prev)
+            @cycles.push(Utils.gen(prev))
             now = @cycles[n]
             v = now.variables
 
+            @doReport(n - 1)
             status = 0
+            log = @log
 
             load = (pipe) ->
-                for i in [0, pipe.elements - 1]
+                for i in [0..pipe.elements.length - 1]
                     v[pipe.elements[i]] = prev.variables[pipe.from[i]]
             stall = (pipe) ->
                 for key in pipe.elements
                     v[key] = prev.variables[key]
             bubble = (pipe) ->
-                for i in [0, pipe.elements - 1]
+                for i in [0..pipe.elements.length - 1]
                     v[pipe.elements[i]] = pipe.bubble[i]
 
             updatePipe =(pipe) ->
                 # 'LOAD' then load new value, 'STALL' then keep old value, 'BUBBLE' then no value
-                switch pipe.status
+                switch pipe.op
                     when P_LOAD then load(pipe)
                     when P_STALL then stall(pipe)
                     when P_BUBBLE then bubble(pipe)
@@ -175,10 +185,10 @@ define ['./Utils'], (Utils) ->
                 imem_error |= not instr?
                 v.f_icode =
                     if imem_error then I_NOP
-                    else Utils.high4(instr[0])
+                    else Utils.high4(instr)
                 v.f_ifun =
                     if imem_error then F_NONE
-                    else Utils.low4(instr[0])
+                    else Utils.low4(instr)
 
                 # Whether need register ids
                 need_regids =
@@ -200,12 +210,16 @@ define ['./Utils'], (Utils) ->
                     imem_error |= not now.memory[v.f_valP + 3]?
                     v.f_valP += 4
 
-                v.f_predC =
+                v.f_predPC =
                     if v.f_icode in [I_JXX, I_CALL] then v.f_valC
                     else v.f_valP
+                if !imem_error
+                    log "\tFetch: f_pc = #{n2h(v.f_pc, -1)}, imem_instr = #{iname[instr]}, f_instr = #{iname[hpack(v.f_icode, v.f_ifun)]}"
 
                 instr_valid =
                     v.f_icode in [I_NOP, I_HALT, I_RRMOVL, I_IRMOVL, I_MRMOVL, I_OPL, I_JXX, I_CALL, I_RET, I_PUSHL, I_POPL]
+                if !instr_valid
+                    log "\tFetch: Instruction code #{n2h(instr, -1)} invalid"
 
                 v.f_stat =
                     if imem_error then STAT_ADR
@@ -259,8 +273,12 @@ define ['./Utils'], (Utils) ->
                     else d_rvalB
 
                 # Write back
-                now.reg[v.M_dstE] = v.M_valE
-                now.reg[v.M_dstM] = v.M_valM
+                if v.W_dstE isnt REG_NONE
+                    log "\tWriteback: Wrote #{n2h(v.W_valE, -1)} to register #{rname[v.W_dstE]}"
+                    now.reg[v.W_dstE] = v.W_valE
+                if v.W_dstM isnt REG_NONE
+                    log "\tWriteback: Wrote #{n2h(v.W_valM, -1)} to register #{rname[v.W_dstM]}"
+                    now.reg[v.W_dstM] = v.W_valM
 
                 status =
                     if v.W_stat is STAT_BUB then STAT_AOK
@@ -269,6 +287,24 @@ define ['./Utils'], (Utils) ->
             ################################### Perform the execute stage #####################################
             doExecuteStage = ->
                 updatePipe executePipe
+
+                # First calculate the condition
+                hold_condition = (cc, ifun) ->
+                    [ZF, SF, OF] = cc
+                    switch ifun
+                        when J_YES then true
+                        when J_LE then (SF ^ OF) | ZF
+                        when J_L then SF ^ OF
+                        when J_E then ZF
+                        when J_NE then ZF ^ 1
+                        when J_GE then SF ^ OF ^ 1
+                        when J_G then (SF ^ OF ^ 1) & (ZF ^ 1)
+                        else false
+                v.e_Cnd = hold_condition(now.cc, v.E_ifun)
+                [ZF, SF, OF] = now.cc
+                if v.E_icode is I_JXX
+                    insert_word = if v.e_Cnd then "" else "not "
+                    log "\tExecute: instr = #{iname[hpack(v.E_icode, v.E_ifun)]}, cc = Z=#{ZF}, S=#{SF}, O=#{OF}, branch #{insert_word}taken"
 
                 # Get the alu value A
                 aluA =
@@ -298,6 +334,7 @@ define ['./Utils'], (Utils) ->
                         when ALU_XOR then aluA ^ aluB
 
                 v.e_valE = compute_alu(aluA, aluB, alufun)
+                log "\tExecute: ALU: #{oname[alufun]} #{n2h(aluA, -1)} #{n2h(aluB, -1)} --> #{n2h(v.e_valE, -1)}"
 
                 # Compute the condition code.
                 compute_cc = (aluA, aluB, alufun) ->
@@ -319,19 +356,8 @@ define ['./Utils'], (Utils) ->
                     (v.E_icode is I_OPL) and not(v.m_stat in [STAT_ADR, STAT_INS, STAT_HLT]) and not(v.W_stat in [STAT_ADR, STAT_INS, STAT_HLT])
                 if set_cc
                     now.cc = compute_cc(aluA, aluB, alufun)
-                    hold_condition = (cc, ifun) ->
-                        [ZF, SF, OF] = cc
-                        switch ifun
-                            when J_YES then true
-                            when J_LE then (SF ^ OF) | ZF
-                            when J_L then SF ^ OF
-                            when J_E then ZF
-                            when J_NE then ZF ^ 1
-                            when J_GE then SF ^ OF ^ 1
-                            when J_G then (SF ^ OF ^ 1) & (ZF ^ 1)
-                            else false
-
-                    v.e_Cnd = hold_condition(now.cc, v.E_ifun)
+                    [ZF, SF, OF] = now.cc
+                    log "\tExecute: New cc = Z=#{ZF} S=#{SF} O=#{OF}"
 
                 v.e_valA =
                     v.E_valA
@@ -355,6 +381,8 @@ define ['./Utils'], (Utils) ->
                 if mem_read
                     v.m_valM = Utils.getWord(now.memory, mem_addr)
                     dmem_error |= not now.memory[mem_addr + 3]?
+                    if not dmem_error
+                        log "\tMemory: Read #{n2h(v.m_valM, -1)} from #{n2h(mem_addr, -1)}"
 
                 # Write memory
                 mem_write =
@@ -363,6 +391,8 @@ define ['./Utils'], (Utils) ->
                 if mem_write
                     Utils.setWord(now.memory, mem_addr, mem_data)
                     dmem_error |= not now.memory[mem_addr + 3]?
+                    if dmem_error
+                        log "\tMemory: Invalid address #{n2h(mem_addr, -1)}"
 
                 v.m_stat =
                     if dmem_error then STAT_ADR
@@ -429,8 +459,7 @@ define ['./Utils'], (Utils) ->
 
             checkStageOp()
 
-            @doReport(n)
-
+            return status
         run: ->
             icount = 0
             ccount = 0

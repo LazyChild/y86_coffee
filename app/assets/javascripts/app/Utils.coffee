@@ -29,20 +29,20 @@ define ->
         (b >> 4) & 0xf
 
     gen: (enviroment) ->
-        reg: enviroment.reg.splice(0)
-        memory: enviroment.memory.splice(0)
+        reg: enviroment.reg.slice(0)
+        memory: enviroment.memory.slice(0)
         variables: {}
-        cc: enviroment.cc.splice(0)
+        cc: enviroment.cc.slice(0)
 
     getWord: (memory, address) ->
         a = memory[address]
         b = memory[address + 1]
         c = memory[address + 2]
         d = memory[address + 3]
-        a | b << 0x4 | c << 0x8 | d << 0xc
+        a | b << 0x8 | c << 0x10 | d << 0x18
 
     setWord: (memory, address, bytes) ->
-        memory[address] = bytes & 0xf
-        memory[address + 1] = (bytes >> 0x4) & 0xf
-        memory[address + 2] = (bytes >> 0x8) & 0xf
-        memory[address + 3] = (bytes >> 0xc) & 0xf
+        memory[address] = bytes & 0xff
+        memory[address + 1] = (bytes >> 0x8) & 0xff
+        memory[address + 2] = (bytes >> 0x10) & 0xff
+        memory[address + 3] = (bytes >> 0x18) & 0xff
