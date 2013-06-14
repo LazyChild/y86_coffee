@@ -33,6 +33,7 @@ define ->
         memory: enviroment.memory.slice(0)
         variables: {}
         cc: enviroment.cc.slice(0)
+        status: enviroment.status
 
     getWord: (memory, address) ->
         a = memory[address]

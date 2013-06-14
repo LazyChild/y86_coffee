@@ -1,36 +1,10 @@
 # The pipeline follows the CSAPP:2nd edition
 define ['./Utils'], (Utils) ->
     class
-        # Load the *.yo file from the text.
-        constructor: (text) ->
-            lines = text.split('\n')
-            enviroment =
-                reg: [0, 0, 0, 0, 0, 0, 0, 0]
-                memory: []
-                variables: {}
-                cc: [false, false, false]
-            @cycles.splice(0)
-            @report.splice(0)
-            @cycles.push(Utils.gen(enviroment))
-            @cycles[0].variables.f_predPC = 0
-            for line in lines
-                part = line.trim().split('|')
-                if part.length isnt 2 then return null
-
-                if part[0] is '' then continue
-                words = part[0].trim().split(/:\s?/)
-                if words.length isnt 2 then return null
-                if words[1] is '' then continue
-
-                address = Utils.hex2num(words[0])
-                for i in [0..words[1].length - 1] by 2
-                    @cycles[0].memory[address++] = Utils.hex2num(words[1][i] + words[1][i + 1])
-
-        # Represents the cycles.
-        cycles: []
-
         # Represents the report.
         report: []
+        # Represents the cycles.
+        cycles: []
 
         iname = {}
         rname = {}
@@ -38,8 +12,8 @@ define ['./Utils'], (Utils) ->
         oname = {}
 
         # Represents the value
-        I_NOP       = 0x0;      iname[I_NOP     << 4]           = 'nop'
-        I_HALT      = 0x1;      iname[I_HALT    << 4]           = 'halt'
+        I_HALT      = 0x0;      iname[I_HALT    << 4]           = 'halt'
+        I_NOP       = 0x1;      iname[I_NOP     << 4]           = 'nop'
         I_RRMOVL    = 0x2;      iname[I_RRMOVL  << 4]           = 'rrmovl'
         I_IRMOVL    = 0x3;      iname[I_IRMOVL  << 4]           = 'irmovl'
         I_RMMOVL    = 0x4;      iname[I_RMMOVL  << 4]           = 'rmmovl'
@@ -119,24 +93,45 @@ define ['./Utils'], (Utils) ->
         n2h = Utils.num2hex
         hpack = Utils.hexPack
 
+        # Load the *.yo file from the text.
+        constructor: (text) ->
+            lines = text.split('\n')
+            enviroment =
+                reg: [0, 0, 0, 0, 0, 0, 0, 0]
+                memory: []
+                variables: {}
+                cc: [false, false, false]
+                status: STAT_AOK
+            @cycles.splice(0)
+            @report.splice(0)
+            @cycles.push(Utils.gen(enviroment))
+            @cycles[0].variables.f_predPC = 0
+            for line in lines
+                part = line.trim().split('|')
+                if part.length isnt 2 then return null
+
+                if part[0] is '' then continue
+                words = part[0].trim().split(/:\s?/)
+                if words.length isnt 2 then return null
+                if words[1] is '' then continue
+
+                address = Utils.hex2num(words[0])
+                for i in [0..words[1].length - 1] by 2
+                    @cycles[0].memory[address++] = Utils.hex2num(words[1][i] + words[1][i + 1])
+
         doReport: (n) ->
-            if n is 0 then return
             now = @cycles[n]
             v = now.variables
             [ZF, SF, OF] = now.cc
-            @report.push "Cycle #{n - 1}. cc = Z=#{ZF} S=#{SF} O=#{OF}, STAT=#{sname[status]}"
-            @report.push "F: predPC = #{n2h(v.F_predPC)}"
-            @report.push "D: instr = #{iname[hpack(v.D_icode, v.D_ifun)]}, rA = #{rname[v.D_rA]}, rB = #{rname[v.D_rB]}, valC = #{n2h(v.D_valC, -1)}, valP = #{n2h(v.D_valP, -1)}, Stat = #{sname[v.D_stat]}"
-            @report.push "E: instr = #{iname[hpack(v.E_icode, v.E_ifun)]}, valC = #{n2h(v.E_valC, -1)}, valA = #{n2h(v.E_valA, -1)}, valB = #{n2h(v.E_valB, -1)}"
-            @report.push "   srcA = #{rname[v.E_srcA]}, srcB = #{rname[v.E_srcB]}, dstE = #{rname[v.E_dstE]}, dstM = #{rname[v.E_dstM]}, Stat = #{sname[v.E_stat]}"
-            @report.push "M: instr = #{iname[hpack(v.M_icode, v.M_ifun)]}, Cnd = #{v.M_Cnd}, valE = #{n2h(v.M_valE, -1)}, valA = #{n2h(v.M_valA, -1)}"
-            @report.push "   dstE = #{rname[v.M_dstE]}, dstM = #{rname[v.M_dstM]}, Stat = #{sname[v.M_stat]}"
-            @report.push "W: instr = #{iname[hpack(v.W_icode, v.W_ifun)]}, valE = #{n2h(v.W_valE, -1)}, valM = #{n2h(v.W_valM, -1)}, dstE = #{rname[v.W_dstE]}, dstM = #{rname[v.W_dstM]}, Stat = #{sname[v.W_stat]}"
             @report.push ""
-
-        log: (n, message) ->
-            if n is 1 then return
-            @report.push message
+            @report.push "Cycle #{n - 1}. cc = Z=#{ZF} S=#{SF} O=#{OF}, STAT=#{sname[now.status]}"
+            @report.push "F: predPC = #{n2h(v.F_predPC)}"
+            @report.push "D: instr = #{iname[hpack(v.D_icode, v.D_ifun)]}, rA = #{rname[v.D_rA]}, rB = #{rname[v.D_rB]}, valC = #{n2h(v.D_valC)}, valP = #{n2h(v.D_valP)}, Stat = #{sname[v.D_stat]}"
+            @report.push "E: instr = #{iname[hpack(v.E_icode, v.E_ifun)]}, valC = #{n2h(v.E_valC)}, valA = #{n2h(v.E_valA)}, valB = #{n2h(v.E_valB)}"
+            @report.push "   srcA = #{rname[v.E_srcA]}, srcB = #{rname[v.E_srcB]}, dstE = #{rname[v.E_dstE]}, dstM = #{rname[v.E_dstM]}, Stat = #{sname[v.E_stat]}"
+            @report.push "M: instr = #{iname[hpack(v.M_icode, v.M_ifun)]}, Cnd = #{v.M_Cnd}, valE = #{n2h(v.M_valE)}, valA = #{n2h(v.M_valA)}"
+            @report.push "   dstE = #{rname[v.M_dstE]}, dstM = #{rname[v.M_dstM]}, Stat = #{sname[v.M_stat]}"
+            @report.push "W: instr = #{iname[hpack(v.W_icode, v.W_ifun)]}, valE = #{n2h(v.W_valE)}, valM = #{n2h(v.W_valM)}, dstE = #{rname[v.W_dstE]}, dstM = #{rname[v.W_dstM]}, Stat = #{sname[v.W_stat]}"
 
         performStep: ->
             n = @cycles.length
@@ -144,10 +139,6 @@ define ['./Utils'], (Utils) ->
             @cycles.push(Utils.gen(prev))
             now = @cycles[n]
             v = now.variables
-
-            @doReport(n - 1)
-            status = 0
-            log = @log
 
             load = (pipe) ->
                 for i in [0..pipe.elements.length - 1]
@@ -167,10 +158,19 @@ define ['./Utils'], (Utils) ->
                     when P_BUBBLE then bubble(pipe)
                     when P_ERROR then bubble(pipe)
 
+            updatePipe(fetchPipe)
+            updatePipe(decodePipe)
+            updatePipe(executePipe)
+            updatePipe(memoryPipe)
+            updatePipe(writebackPipe)
+            @doReport(n)
+
+            report = @report
+            log = (message) ->
+                report.push(message)
+
             ################################### Perform the fetch stage ######################################
             doFetchStage = ->
-                updatePipe fetchPipe
-
                 # Get f_pc
                 v.f_pc =
                     if v.M_icode is I_JXX and not v.M_Cnd then v.M_valA
@@ -214,12 +214,12 @@ define ['./Utils'], (Utils) ->
                     if v.f_icode in [I_JXX, I_CALL] then v.f_valC
                     else v.f_valP
                 if !imem_error
-                    log "\tFetch: f_pc = #{n2h(v.f_pc, -1)}, imem_instr = #{iname[instr]}, f_instr = #{iname[hpack(v.f_icode, v.f_ifun)]}"
+                    log "\tFetch: f_pc = #{n2h(v.f_pc)}, imem_instr = #{iname[instr]}, f_instr = #{iname[hpack(v.f_icode, v.f_ifun)]}"
 
                 instr_valid =
                     v.f_icode in [I_NOP, I_HALT, I_RRMOVL, I_IRMOVL, I_MRMOVL, I_OPL, I_JXX, I_CALL, I_RET, I_PUSHL, I_POPL]
                 if !instr_valid
-                    log "\tFetch: Instruction code #{n2h(instr, -1)} invalid"
+                    log "\tFetch: Instruction code #{n2h(instr)} invalid"
 
                 v.f_stat =
                     if imem_error then STAT_ADR
@@ -229,9 +229,6 @@ define ['./Utils'], (Utils) ->
 
             ########################### Perform the decode and writeback stage ################################
             doDecodeAndWriteStage = ->
-                updatePipe decodePipe
-                updatePipe writebackPipe
-
                 v.d_srcA =
                     if v.D_icode in [I_RRMOVL, I_RMMOVL, I_OPL, I_PUSHL] then v.D_rA
                     else if v.D_icode in [I_POPL, I_RET] then REG_ESP
@@ -280,14 +277,12 @@ define ['./Utils'], (Utils) ->
                     log "\tWriteback: Wrote #{n2h(v.W_valM, -1)} to register #{rname[v.W_dstM]}"
                     now.reg[v.W_dstM] = v.W_valM
 
-                status =
+                now.status =
                     if v.W_stat is STAT_BUB then STAT_AOK
                     else v.W_stat
 
             ################################### Perform the execute stage #####################################
             doExecuteStage = ->
-                updatePipe executePipe
-
                 # First calculate the condition
                 hold_condition = (cc, ifun) ->
                     [ZF, SF, OF] = cc
@@ -367,8 +362,6 @@ define ['./Utils'], (Utils) ->
 
             ################################## Perform the memory stage #######################################
             doMemoryStage = ->
-                updatePipe memoryPipe
-
                 dmem_error = false
 
                 mem_addr =
@@ -453,16 +446,22 @@ define ['./Utils'], (Utils) ->
                 v.W_stat = STAT_PIP
 
             doFetchStage()
-            doExecuteStage()
             doMemoryStage()
+            doExecuteStage()
             doDecodeAndWriteStage()
 
             checkStageOp()
 
-            return status
+            return now.status
+
         run: ->
+            # Initialize
             icount = 0
             ccount = 0
+
+            @report.push "Y86 Processor: Y86-CoffeeScript Full"
+            @report.push "#{@cycles[0].memory.length} bytes of code read"
+
             loop
                 run_stat = @performStep()
                 ++icount if run_stat isnt STAT_BUB
