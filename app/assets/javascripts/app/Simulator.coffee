@@ -93,6 +93,10 @@ define ['./Utils'], (Utils) ->
         n2h = Utils.num2hex
         hpack = Utils.hexPack
 
+        instructions = 0
+        cycles_count = 0
+        starting_up = 0
+
         # Load the *.yo file from the text.
         constructor: (text) ->
             lines = text.split('\n')
@@ -452,12 +456,21 @@ define ['./Utils'], (Utils) ->
 
             checkStageOp()
 
+            if v.W_stat isnt STAT_BUB
+                starting_up = false
+                ++instructions
+                ++cycles_count
+            else if not starting_up
+                ++cycles_count
+
             return now.status
 
         run: ->
             # Initialize
             icount = 0
             ccount = 0
+            instructions = cycles_count = 0
+            starting_up = true
 
             @report.push "Y86 Processor: Y86-CoffeeScript Full"
             @report.push "#{@cycles[0].memory.length} bytes of code read"
@@ -467,3 +480,26 @@ define ['./Utils'], (Utils) ->
                 ++icount if run_stat isnt STAT_BUB
                 ++ccount
                 break if run_stat isnt STAT_AOK and run_stat isnt STAT_BUB
+            @report.push "#{icount} instructions executed"
+            @report.push "Status = #{run_stat}"
+            n = @cycles.length
+            [ZF, SF, OF] = @cycles[n - 1].cc
+            @report.push "Condition Codes: Z=#{ZF} S=#{SF} O=#{OF}"
+
+            @report.push "Changed Register State:"
+            diff_reg = (report, reg0, reg) ->
+                for i in [0..reg.length - 1]
+                    report.push "#{rname[i]}:   #{n2h(0, 8)}  #{n2h(reg[i], 8)}"
+            diff_reg(@report, @cycles[0].reg, @cycles[n - 1].reg)
+
+            @report.push "Changed Memory State:"
+            diff_mem = (report, mem0, mem) ->
+                for i in [0..mem.length - 1]
+                    valA = n2h(mem0[i], 8)
+                    valB = n2h(mem[i], 8)
+                    if valA isnt valB
+                        report.push "#{n2h(i, 4)}: #{valA} #{valB}"
+            diff_mem(@report, @cycles[0].memory, @cycles[n - 1].memory)
+
+            cpi = if instructions > 0 then cycles_count / instructions else 1
+            @report.push "CPI: #{cycles_count} cycles/#{instructions} instructions = #{cpi.toFixed(2)}"
