@@ -35,14 +35,14 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
             simulator.run()
             report = simulator.report.join('\n')
             console.log(report)
-            # saveResult()
+            # saveResult(report)
             box.html $('<pre>').append(e.target.result)
         reader.readAsText(file)
 
     # Perform the save file action.
-    saveResult = ->
-        blob = new(Blob ['Hello Word!'], type: "text/plain;charset=utf-8")
-        saveAs(blob, "test.txt")
+    saveResult = (result) ->
+        blob = new Blob([result], type: "text/plain;charset=utf-8")
+        saveAs(blob, "result.txt")
 
     # Add actions after document ready.
     $ ->
@@ -53,7 +53,7 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
     $(window).on('resize', ->
         if @resizeTimeout
             clearTimeout(@resizeTimeout)
-        @resizeTimeout = setTimeout(->
+        @resizeTimeout = setTimeout( ->
             $(@).trigger 'resizeEnd'
         , 200)
     )

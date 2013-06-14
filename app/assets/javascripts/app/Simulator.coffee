@@ -161,6 +161,7 @@ define ['./Utils'], (Utils) ->
                     when P_STALL then stall(pipe)
                     when P_BUBBLE then bubble(pipe)
                     when P_ERROR then bubble(pipe)
+                    else
 
             updatePipe(fetchPipe)
             updatePipe(decodePipe)
@@ -331,6 +332,7 @@ define ['./Utils'], (Utils) ->
                         when ALU_SUB then i(aluA - aluB)
                         when ALU_AND then aluA & aluB
                         when ALU_XOR then aluA ^ aluB
+                        else
 
                 v.e_valE = compute_alu(aluA, aluB, alufun)
                 log "\tExecute: ALU: #{oname[alufun]} #{n2h(aluA, -1)} #{n2h(aluB, -1)} --> #{n2h(v.e_valE, -1)}"
@@ -481,7 +483,7 @@ define ['./Utils'], (Utils) ->
                 ++ccount
                 break if run_stat isnt STAT_AOK and run_stat isnt STAT_BUB
             @report.push "#{icount} instructions executed"
-            @report.push "Status = #{run_stat}"
+            @report.push "Status = #{sname[run_stat]}"
             n = @cycles.length
             [ZF, SF, OF] = @cycles[n - 1].cc
             @report.push "Condition Codes: Z=#{ZF} S=#{SF} O=#{OF}"
