@@ -73,22 +73,22 @@ define ['./Utils'], (Utils) ->
             op: P_BUBBLE
             elements:   ['D_icode', 'D_ifun', 'D_rA', 'D_rB', 'D_valC', 'D_valP', 'D_stat', 'D_pc']
             from:       ['f_icode', 'f_ifun', 'f_rA', 'f_rB', 'f_valC', 'f_valP', 'f_stat', 'f_pc']
-            bubble:     [I_NOP, F_NONE, REG_NONE, REG_NONE, 0, 0, STAT_BUB]
+            bubble:     [I_NOP, F_NONE, REG_NONE, REG_NONE, undefined, undefined , STAT_BUB, undefined]
         executePipe =
             op: P_BUBBLE
             elements:   ['E_icode', 'E_ifun', 'E_valC', 'E_valA', 'E_valB', 'E_dstE', 'E_dstM', 'E_srcA', 'E_srcB', 'E_stat', 'E_pc']
             from:       ['D_icode', 'D_ifun', 'D_valC', 'd_valA', 'd_valB', 'd_dstE', 'd_dstM', 'd_srcA', 'd_srcB', 'D_stat', 'D_pc']
-            bubble:     [I_NOP, F_NONE, 0, 0, 0, REG_NONE, REG_NONE, REG_NONE, REG_NONE, STAT_BUB]
+            bubble:     [I_NOP, F_NONE, undefined, undefined, undefined, REG_NONE, REG_NONE, REG_NONE, REG_NONE, STAT_BUB, undefined]
         memoryPipe =
             op: P_BUBBLE
             elements:   ['M_icode', 'M_ifun', 'M_Cnd', 'M_valE', 'M_valA', 'M_dstE', 'M_dstM', 'M_stat', 'M_pc']
             from:       ['E_icode', 'E_ifun', 'e_Cnd', 'e_valE', 'E_valA', 'e_dstE', 'E_dstM', 'E_stat', 'E_pc']
-            bubble:     [I_NOP, F_NONE, false, 0, 0, REG_NONE, REG_NONE, STAT_BUB]
+            bubble:     [I_NOP, F_NONE, false, undefined, undefined, REG_NONE, REG_NONE, STAT_BUB, undefined]
         writebackPipe =
             op: P_BUBBLE
             elements:   ['W_icode', 'W_ifun', 'W_valE', 'W_valM', 'W_dstE', 'W_dstM', 'W_stat', 'W_pc']
             from:       ['M_icode', 'M_ifun', 'M_valE', 'm_valM', 'M_dstE', 'M_dstM', 'm_stat', 'M_pc']
-            bubble:     [I_NOP, F_NONE, 0, 0, REG_NONE, REG_NONE, STAT_BUB]
+            bubble:     [I_NOP, F_NONE, undefined, undefined, REG_NONE, REG_NONE, STAT_BUB, undefined]
 
         n2h = Utils.num2hex
         hpack = Utils.hexPack
@@ -276,10 +276,10 @@ define ['./Utils'], (Utils) ->
 
                 # Write back
                 if v.W_dstE isnt REG_NONE
-                    log "\tWriteback: Wrote #{n2h(v.W_valE, -1)} to register #{rname[v.W_dstE]}"
+                    log "\tWriteback: Wrote #{n2h(v.W_valE)} to register #{rname[v.W_dstE]}"
                     now.reg[v.W_dstE] = v.W_valE
                 if v.W_dstM isnt REG_NONE
-                    log "\tWriteback: Wrote #{n2h(v.W_valM, -1)} to register #{rname[v.W_dstM]}"
+                    log "\tWriteback: Wrote #{n2h(v.W_valM)} to register #{rname[v.W_dstM]}"
                     now.reg[v.W_dstM] = v.W_valM
 
                 now.status =
@@ -301,8 +301,8 @@ define ['./Utils'], (Utils) ->
                         when J_G then (SF ^ OF ^ 1) & (ZF ^ 1)
                         else false
                 v.e_Cnd = hold_condition(now.cc, v.E_ifun)
-                [ZF, SF, OF] = now.cc
                 if v.E_icode is I_JXX
+                    [ZF, SF, OF] = now.cc
                     insert_word = if v.e_Cnd then "" else "not "
                     log "\tExecute: instr = #{iname[hpack(v.E_icode, v.E_ifun)]}, cc = Z=#{ZF}, S=#{SF}, O=#{OF}, branch #{insert_word}taken"
 
@@ -327,15 +327,17 @@ define ['./Utils'], (Utils) ->
 
                 # Compute the alu value.
                 compute_alu = (aluA, aluB, alufun) ->
+                    if not aluA? or not aluB?
+                        return undefined
                     switch alufun
                         when ALU_ADD then i(aluA + aluB)
                         when ALU_SUB then i(aluA - aluB)
                         when ALU_AND then aluA & aluB
                         when ALU_XOR then aluA ^ aluB
-                        else
+                        else undefined
 
                 v.e_valE = compute_alu(aluA, aluB, alufun)
-                log "\tExecute: ALU: #{oname[alufun]} #{n2h(aluA, -1)} #{n2h(aluB, -1)} --> #{n2h(v.e_valE, -1)}"
+                log "\tExecute: ALU: #{oname[alufun]} #{n2h(aluA)} #{n2h(aluB)} --> #{n2h(v.e_valE)}"
 
                 # Compute the condition code.
                 compute_cc = (aluA, aluB, alufun) ->
@@ -381,7 +383,7 @@ define ['./Utils'], (Utils) ->
                     v.m_valM = Utils.getWord(now.memory, mem_addr)
                     dmem_error |= not now.memory[mem_addr + 3]?
                     if not dmem_error
-                        log "\tMemory: Read #{n2h(v.m_valM, -1)} from #{n2h(mem_addr, -1)}"
+                        log "\tMemory: Read #{n2h(v.m_valM)} from #{n2h(mem_addr)}"
 
                 # Write memory
                 mem_write =
@@ -390,8 +392,11 @@ define ['./Utils'], (Utils) ->
                 if mem_write
                     Utils.setWord(now.memory, mem_addr, mem_data)
                     dmem_error |= not now.memory[mem_addr + 3]?
-                    if dmem_error
-                        log "\tMemory: Invalid address #{n2h(mem_addr, -1)}"
+                    if not dmem_error
+                        log "\tMemory: Wrote #{n2h(mem_data)} to #{n2h(mem_addr)}"
+
+                if dmem_error
+                    log "\tMemory: Invalid address #{n2h(mem_addr)}"
 
                 v.m_stat =
                     if dmem_error then STAT_ADR

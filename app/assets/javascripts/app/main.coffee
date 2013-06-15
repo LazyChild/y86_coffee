@@ -2,7 +2,7 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
     # Represents the painter used for paint.
     painter = new Painter('container')
     simulator = null
-    nowCircle = 0
+    nowCircle = 1
 
     handleDropbox = (id) ->
         box = $(id)
@@ -35,7 +35,7 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
             simulator = new Simulator(e.target.result)
             simulator.run()
             report = simulator.report.join('\n')
-            painter.show(simulator.cycles[2])
+            painter.show(simulator.cycles[1])
             console.log(report)
             # saveResult(report)
             box.html $('<pre>').append(e.target.result)
@@ -50,6 +50,22 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
     $ ->
         painter.render()
         handleDropbox('#code')
+
+    # Deal with the next button
+    $('#next').on('click', ->
+        if nowCircle + 1 >= simulator.cycles.length
+            alert "程序运行结束！"
+        else
+            painter.show(simulator.cycles[++nowCircle])
+    )
+
+    # Deal with the prev button
+    $('#prev').on('click', ->
+        if nowCircle is 1
+            alert "程序已经在第一个cycle！"
+        else
+            painter.show(simulator.cycles[--nowCircle])
+    )
 
     # Deal with the window resize.
     $(window).on('resize', ->

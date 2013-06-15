@@ -11,9 +11,10 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             white: '#FFFFFF'
             black: '#000000'
             blue: '#8ED8F8'
+            red: '#F8278E'
 
         K.Rect::rightX = ->
-            @getAttr('x') + @getWidth()
+            @getX() + @getWidth()
 
         # Represents the basic label rectangle
         basicRect = new K.Rect
@@ -25,7 +26,6 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
         # Calculate the end X coordinates of the group
         K.Group::rightX = ->
             children = @getChildren()
-            length = children.length
             x = 0
             for child in children
                 if child.getClassName() is "Rect"
@@ -44,7 +44,7 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                 fontFamily: 'Calibri'
                 fontSize: 12
                 align: 'center'
-            label.setAttr 'y', (rect.getHeight() - label.getHeight()) / 2
+            label.setY((rect.getHeight() - label.getHeight()) / 2)
 
             @add rect
             @add label
@@ -204,18 +204,23 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                         when 4 then 'INS'
                         when 5 then 'PIP'
                         else 'STAT'
-                    label.setAttr('text', str)
-                    label.setAttr('fill', colors.blue)
+                    label.setText(str)
+                    if str in ['AOK', 'STAT']
+                        label.setFill(colors.black)
+                    else if str is 'BUB'
+                        label.setFill(colors.blue)
+                    else
+                        label.setFill(colors.red)
                 else if name is 'pc'
                     if not value?
-                        label.setAttr('text', name)
+                        label.setText(name)
                     else
-                        label.setAttr('text', name + '\n' + Utils.num2hex(value, 4))
+                        label.setText(name + '\n' + Utils.num2hex(value, 4))
                 else
                     if not value?
-                        label.setAttr('text', name)
+                        label.setText(name)
                     else
-                        label.setAttr('text', name + '\n' + Utils.num2hex(value, Utils.lengthFromName(name)))
-                label.setAttr('y', (20 - label.getHeight()) / 2)
+                        label.setText(name + '\n' + Utils.num2hex(value, Utils.lengthFromName(name)))
+                label.setY((20 - label.getHeight()) / 2)
 
             mainLayer.draw()
