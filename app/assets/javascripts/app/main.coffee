@@ -2,9 +2,10 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
     # Represents the painter used for paint.
     painter = new Painter('container')
     simulator = null
+    nowCircle = 0
 
     handleDropbox = (id) ->
-        box = $ id
+        box = $(id)
         box.on 'dragenter dragover', (e) ->
             e.stopPropagation()
             e.preventDefault()
@@ -34,6 +35,7 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
             simulator = new Simulator(e.target.result)
             simulator.run()
             report = simulator.report.join('\n')
+            painter.show(simulator.cycles[2])
             console.log(report)
             # saveResult(report)
             box.html $('<pre>').append(e.target.result)
@@ -54,7 +56,7 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
         if @resizeTimeout
             clearTimeout(@resizeTimeout)
         @resizeTimeout = setTimeout( ->
-            $(@).trigger 'resizeEnd'
+            $(@).trigger('resizeEnd')
         , 200)
     )
 

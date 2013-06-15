@@ -71,23 +71,23 @@ define ['./Utils'], (Utils) ->
             from:       ['f_predPC']
         decodePipe =
             op: P_BUBBLE
-            elements:   ['D_icode', 'D_ifun', 'D_rA', 'D_rB', 'D_valC', 'D_valP', 'D_stat']
-            from:       ['f_icode', 'f_ifun', 'f_rA', 'f_rB', 'f_valC', 'f_valP', 'f_stat']
+            elements:   ['D_icode', 'D_ifun', 'D_rA', 'D_rB', 'D_valC', 'D_valP', 'D_stat', 'D_pc']
+            from:       ['f_icode', 'f_ifun', 'f_rA', 'f_rB', 'f_valC', 'f_valP', 'f_stat', 'f_pc']
             bubble:     [I_NOP, F_NONE, REG_NONE, REG_NONE, 0, 0, STAT_BUB]
         executePipe =
             op: P_BUBBLE
-            elements:   ['E_icode', 'E_ifun', 'E_valC', 'E_valA', 'E_valB', 'E_dstE', 'E_dstM', 'E_srcA', 'E_srcB', 'E_stat']
-            from:       ['D_icode', 'D_ifun', 'D_valC', 'd_valA', 'd_valB', 'd_dstE', 'd_dstM', 'd_srcA', 'd_srcB', 'D_stat']
+            elements:   ['E_icode', 'E_ifun', 'E_valC', 'E_valA', 'E_valB', 'E_dstE', 'E_dstM', 'E_srcA', 'E_srcB', 'E_stat', 'E_pc']
+            from:       ['D_icode', 'D_ifun', 'D_valC', 'd_valA', 'd_valB', 'd_dstE', 'd_dstM', 'd_srcA', 'd_srcB', 'D_stat', 'D_pc']
             bubble:     [I_NOP, F_NONE, 0, 0, 0, REG_NONE, REG_NONE, REG_NONE, REG_NONE, STAT_BUB]
         memoryPipe =
             op: P_BUBBLE
-            elements:   ['M_icode', 'M_ifun', 'M_Cnd', 'M_valE', 'M_valA', 'M_dstE', 'M_dstM', 'M_stat']
-            from:       ['E_icode', 'E_ifun', 'e_Cnd', 'e_valE', 'E_valA', 'e_dstE', 'E_dstM', 'E_stat']
+            elements:   ['M_icode', 'M_ifun', 'M_Cnd', 'M_valE', 'M_valA', 'M_dstE', 'M_dstM', 'M_stat', 'M_pc']
+            from:       ['E_icode', 'E_ifun', 'e_Cnd', 'e_valE', 'E_valA', 'e_dstE', 'E_dstM', 'E_stat', 'E_pc']
             bubble:     [I_NOP, F_NONE, false, 0, 0, REG_NONE, REG_NONE, STAT_BUB]
         writebackPipe =
             op: P_BUBBLE
-            elements:   ['W_icode', 'W_ifun', 'W_valE', 'W_valM', 'W_dstE', 'W_dstM', 'W_stat']
-            from:       ['M_icode', 'M_ifun', 'M_valE', 'm_valM', 'M_dstE', 'M_dstM', 'm_stat']
+            elements:   ['W_icode', 'W_ifun', 'W_valE', 'W_valM', 'W_dstE', 'W_dstM', 'W_stat', 'W_pc']
+            from:       ['M_icode', 'M_ifun', 'M_valE', 'm_valM', 'M_dstE', 'M_dstM', 'm_stat', 'M_pc']
             bubble:     [I_NOP, F_NONE, 0, 0, REG_NONE, REG_NONE, STAT_BUB]
 
         n2h = Utils.num2hex

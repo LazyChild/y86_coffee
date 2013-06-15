@@ -1,7 +1,8 @@
 define ->
     # Converts the number into hex string.
     num2hex: (num, length) ->
-        number = if num then num else 0
+        number = if num? then num else 0
+        number |= 0
         if number < 0
             number += 0xffffffff + 1
         ret = number.toString 16
