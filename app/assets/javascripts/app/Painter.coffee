@@ -169,6 +169,61 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             stage.addRect 40, colors.white, 'pc'
             return stage
 
+        registerRects = []
+        registerNames = ['%eax', '%ecx', '%edx', '%ebx', '%esp', '%ebp', '%esi', '%edi']
+        registerTexts = []
+
+        ccNames = ['ZF', 'SF', 'OF']
+        ccTexts = []
+
+        # Render the register the group
+        registerGroup = (y) ->
+            group = new K.Group
+                x: 20
+                y: y
+
+            width = 70
+            registerRects = []
+            registerTexts = []
+            for i in [0..7]
+                rect = basicRect.clone
+                    x: (i % 4) * width
+                    y: Math.floor(i / 4) * 20
+                    fill: colors.white
+                    width: width
+                text = new K.Text
+                    fill: colors.black
+                    fontFamily: 'Consolas'
+                    fontSize: 11
+                    align: 'center'
+                    x: rect.getX()
+                    y: rect.getY()
+                    width: width
+                registerRects.push(rect)
+                registerTexts.push(text)
+                group.add(rect)
+                group.add(text)
+            width = 50
+            ccTexts = []
+            for i in [0..2]
+                rect = basicRect.clone
+                    x: i * width + 320
+                    y: 10
+                    fill: colors.white
+                    width: width
+                text = new K.Text
+                    fill: colors.black
+                    fontFamily: 'Consolas'
+                    align: 'center'
+                    fontSize: 11
+                    x: rect.getX()
+                    y: rect.getY()
+                    width: width
+                ccTexts.push(text)
+                group.add(rect)
+                group.add(text)
+            return group
+
         # Render the whole container.
         render: ->
             scale = $(window).width() / 800.0
@@ -178,20 +233,22 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                 height: 1000
                 scale: scale
             mainLayer = new K.Layer()
-            mainLayer.add fetchStage 270
-            mainLayer.add decodeStage 210
-            mainLayer.add executeStage 150
-            mainLayer.add memoryStage 90
-            mainLayer.add writebackStage 30
-            stage.add mainLayer
+            mainLayer.add fetchStage(270)
+            mainLayer.add decodeStage(210)
+            mainLayer.add executeStage(150)
+            mainLayer.add memoryStage(90)
+            mainLayer.add writebackStage(30)
+            mainLayer.add registerGroup(330)
+            stage.add(mainLayer)
             @show
                 variables: {}
                 reg: [0, 0, 0, 0, 0, 0, 0, 0]
                 cc: [false, false, false]
 
-        # Show all the variables.
+        # Show all the infomation.
         show: (cycle) ->
             variables = cycle.variables
+            reg = cycle.reg
             for own key, label of labels
                 name = label.labelName
                 value = variables[key]
@@ -223,4 +280,21 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                         label.setText(name + '\n' + Utils.num2hex(value, Utils.lengthFromName(name)))
                 label.setY((20 - label.getHeight()) / 2)
 
+            # Show reigister
+            for i in [0..7]
+                label = registerTexts[i]
+                label.setText(registerNames[i] + '\n' + Utils.num2hex(reg[i], 8))
+                label.setFill(colors.black)
+                registerRects[i].setFill(colors.white)
+            renderDstBG = (dst) ->
+                if dst? and dst isnt 0xf
+                    registerRects[dst].setFill(colors.blue)
+                    registerTexts[dst].setFill(colors.white)
+            renderDstBG(variables.W_dstE)
+            renderDstBG(variables.W_dstM)
+
+            # Show condition codes
+            for i in [0..2]
+                ccTexts[i].setText(ccNames[i] + ': ' + (cycle.cc[i] | 0))
+                ccTexts[i].setY(10 + (20 - ccTexts[i].getHeight()) / 2)
             mainLayer.draw()
