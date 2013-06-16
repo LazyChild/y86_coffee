@@ -51,10 +51,12 @@
         <div id="container"></div>
         <div id="right-container">
             <div id="controller">
-                Cycle #<span id="cycle_index">0</span>
+                <p>Cycle #<span id="cycle_index">0</span></p>
+                Speed: <input type="range" id="speed" min="500" max="1900" value="1400" step="100"/>
+                <button id="play">play</button>
                 <button id="prev">prev</button>
                 <button id="next">next</button>
-                <button id="play">play</button>
+                <button id="reset">reset</button>
             </div>
             <div id="code"><h2>Drag your Y86 code here!</h2></div>
         </div>

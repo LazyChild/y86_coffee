@@ -72,13 +72,19 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
             show(--nowCircle)
     )
 
+    # Deal with the reset button
+    $('#reset').on('click', ->
+        if playing then $('#play').trigger('click')
+        show(nowCircle = 1)
+    )
+
     # Play the simulator continuously
     play = ->
         if nowCircle + 1 >= simulator.cycles.length
             playing = false
         if not playing then return
         show(++nowCircle)
-        setTimeout(play, 1000)
+        setTimeout(play, 2100 - $('#speed').val())
 
     $('#play').on('click', ->
         playing = not playing
