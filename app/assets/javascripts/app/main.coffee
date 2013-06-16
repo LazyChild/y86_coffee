@@ -3,6 +3,7 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
     painter = new Painter('container')
     simulator = null
     nowCircle = 1
+    playing = false
 
     handleDropbox = (id) ->
         box = $(id)
@@ -51,12 +52,16 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
         painter.render()
         handleDropbox('#code')
 
+    show = (cycle) ->
+        $('#cycle_index').html(cycle - 1)
+        painter.show(simulator.cycles[cycle])
+
     # Deal with the next button
     $('#next').on('click', ->
         if nowCircle + 1 >= simulator.cycles.length
             alert "程序运行结束！"
         else
-            painter.show(simulator.cycles[++nowCircle])
+            show(++nowCircle)
     )
 
     # Deal with the prev button
@@ -64,7 +69,24 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
         if nowCircle is 1
             alert "程序已经在第一个cycle！"
         else
-            painter.show(simulator.cycles[--nowCircle])
+            show(--nowCircle)
+    )
+
+    # Play the simulator continuously
+    play = ->
+        if nowCircle + 1 >= simulator.cycles.length
+            playing = false
+        if not playing then return
+        show(++nowCircle)
+        setTimeout(play, 1000)
+
+    $('#play').on('click', ->
+        playing = not playing
+        if playing
+            $(@).html('pause')
+            play()
+        else
+            $(@).html('play')
     )
 
     # Deal with the window resize.
