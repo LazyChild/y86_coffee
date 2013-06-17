@@ -181,26 +181,30 @@ define ['./Utils'], (Utils) ->
                     if v.M_icode is I_JXX and not v.M_Cnd then v.M_valA
                     else if v.W_icode is I_RET then v.W_valM
                     else v.F_predPC
+                v.f_pc_from =
+                    if v.M_icode is I_JXX and not v.M_Cnd then 'M_valA'
+                    else if v.W_icode is I_RET then 'W_valM'
+                    else 'F_predPC'
                 v.f_valP = v.f_pc
 
-                imem_error = false
+                v.imem_error = false
 
                 # Fetch the memory
                 instr = now.memory[v.f_valP++]
-                imem_error |= not instr?
+                v.imem_error = true if not instr?
                 v.f_icode =
-                    if imem_error then I_NOP
+                    if v.imem_error then I_NOP
                     else Utils.high4(instr)
                 v.f_ifun =
-                    if imem_error then F_NONE
+                    if v.imem_error then F_NONE
                     else Utils.low4(instr)
 
                 # Whether need register ids
-                need_regids =
+                v.need_regids =
                     v.f_icode in [I_RRMOVL, I_OPL, I_PUSHL, I_POPL, I_IRMOVL, I_RMMOVL, I_MRMOVL]
-                if need_regids
+                if v.need_regids
                     regids = now.memory[v.f_valP++]
-                    imem_error |= not regids?
+                    v.imem_error = true if not regids?
                     v.f_rA = Utils.high4(regids)
                     v.f_rB = Utils.low4(regids)
                 else
@@ -208,27 +212,30 @@ define ['./Utils'], (Utils) ->
                     v.f_rB = REG_NONE
 
                 # Whether need valC
-                need_valC =
+                v.need_valC =
                     v.f_icode in [I_IRMOVL, I_RMMOVL, I_MRMOVL, I_JXX, I_CALL]
-                if need_valC
+                if v.need_valC
                     v.f_valC = Utils.getWord(now.memory, v.f_valP)
-                    imem_error |= not now.memory[v.f_valP + 3]?
+                    v.imem_error = true if not now.memory[v.f_valP + 3]?
                     v.f_valP += 4
 
                 v.f_predPC =
                     if v.f_icode in [I_JXX, I_CALL] then v.f_valC
                     else v.f_valP
-                if !imem_error
+                v.f_predPC_from =
+                    if v.f_icode in [I_JXX, I_CALL] then 'f_valC'
+                    else 'f_valP'
+                if not v.imem_error
                     log "\tFetch: f_pc = #{n2h(v.f_pc)}, imem_instr = #{iname[instr]}, f_instr = #{iname[hpack(v.f_icode, v.f_ifun)]}"
 
-                instr_valid =
+                v.instr_valid =
                     v.f_icode in [I_NOP, I_HALT, I_RRMOVL, I_IRMOVL, I_MRMOVL, I_OPL, I_JXX, I_CALL, I_RET, I_PUSHL, I_POPL]
-                if !instr_valid
+                if not v.instr_valid
                     log "\tFetch: Instruction code #{n2h(instr)} invalid"
 
                 v.f_stat =
-                    if imem_error then STAT_ADR
-                    else if not instr_valid then STAT_INS
+                    if v.imem_error then STAT_ADR
+                    else if not v.instr_valid then STAT_INS
                     else if v.f_icode is I_HALT then STAT_HLT
                     else STAT_AOK
 

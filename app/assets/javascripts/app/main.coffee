@@ -109,5 +109,5 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
         painter.render()
 
     $('#test').on('click', ->
-        painter.renderF_D()
+        painter.f_render()
     )

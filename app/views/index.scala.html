@@ -39,26 +39,23 @@
             }
             #right-container {
             float: right;
-            width: 30%;
-            }
-            #controller {
-            margin-bottom: 5%;
+            width: 35%;
             }
         </style>
     </head>
     <body>
-        <h1>Y86 Pipeline Simulator</h1>
+        <h2>Y86 Pipeline Simulator</h2>
+        <div id="controller">
+            Cycle #<span id="cycle_index">0</span>
+            <input type="range" id="speed" min="500" max="1900" value="1400" step="100"/>
+            <button id="play">play</button>
+            <button id="prev">prev</button>
+            <button id="next">next</button>
+            <button id="reset">reset</button>
+            <button id="test">test</button>
+        </div>
         <div id="container"></div>
         <div id="right-container">
-            <div id="controller">
-                <p>Cycle #<span id="cycle_index">0</span></p>
-                Speed: <input type="range" id="speed" min="500" max="1900" value="1400" step="100"/>
-                <button id="play">play</button>
-                <button id="prev">prev</button>
-                <button id="next">next</button>
-                <button id="reset">reset</button>
-                <button id="test">test</button>
-            </div>
             <div id="code"><h2>Drag your Y86 code here!</h2></div>
         </div>
     </body>
