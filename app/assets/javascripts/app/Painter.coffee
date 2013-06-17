@@ -2,7 +2,8 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
     class
         constructor: (@container) ->
 
-        # Represents the main layer.
+        # Represents the main stage and layer.
+        mainStage = null
         mainLayer = null
         # Represents the labels container.
         labels = {}
@@ -227,11 +228,16 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
         # Render the whole container.
         render: ->
             scale = $(window).width() / 800.0
-            stage = new K.Stage
+            mainStage = new K.Stage
                 container: @container
                 width: $(window).width() * 0.65
                 height: 1000
                 scale: scale
+            @renderMain()   
+
+        renderMain: ->
+            if mainLayer? then mainLayer.remove()
+            labels = {}
             mainLayer = new K.Layer()
             mainLayer.add fetchStage(270)
             mainLayer.add decodeStage(210)
@@ -239,11 +245,31 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             mainLayer.add memoryStage(90)
             mainLayer.add writebackStage(30)
             mainLayer.add registerGroup(330)
-            stage.add(mainLayer)
+            mainStage.add(mainLayer)
             @show
                 variables: {}
                 reg: [0, 0, 0, 0, 0, 0, 0, 0]
                 cc: [false, false, false]
+
+        basePath = 'assets/images/'
+
+        renderF_D: ->
+            if mainLayer? then mainLayer.remove()
+            mainLayer = new K.Layer()
+            image = new Image()
+            image.onload = ->
+                scale = 800 / image.width * 0.55
+                console.log scale
+                i = new K.Image
+                    x: 20
+                    width: image.width
+                    height: image.height
+                    scale: scale
+                    image: image
+                mainLayer.add(i)
+                mainStage.add(mainLayer)
+            image.src = basePath + 'F-D.png'
+            mainLayer.draw()
 
         # Show all the infomation.
         show: (cycle) ->
@@ -281,20 +307,22 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                 label.setY((20 - label.getHeight()) / 2)
 
             # Show reigister
-            for i in [0..7]
-                label = registerTexts[i]
-                label.setText(registerNames[i] + '\n' + Utils.num2hex(reg[i], 8))
-                label.setFill(colors.black)
-                registerRects[i].setFill(colors.white)
-            renderDstBG = (dst) ->
-                if dst? and dst isnt 0xf
-                    registerRects[dst].setFill(colors.blue)
-                    registerTexts[dst].setFill(colors.white)
-            renderDstBG(variables.W_dstE)
-            renderDstBG(variables.W_dstM)
+            if registerTexts.length > 0
+                for i in [0..7]
+                    label = registerTexts[i]
+                    label.setText(registerNames[i] + '\n' + Utils.num2hex(reg[i], 8))
+                    label.setFill(colors.black)
+                    registerRects[i].setFill(colors.white)
+                renderDstBG = (dst) ->
+                    if dst? and dst isnt 0xf
+                        registerRects[dst].setFill(colors.blue)
+                        registerTexts[dst].setFill(colors.white)
+                renderDstBG(variables.W_dstE)
+                renderDstBG(variables.W_dstM)
 
             # Show condition codes
-            for i in [0..2]
-                ccTexts[i].setText(ccNames[i] + ': ' + (cycle.cc[i] | 0))
-                ccTexts[i].setY(10 + (20 - ccTexts[i].getHeight()) / 2)
+            if ccTexts.length > 0
+                for i in [0..2]
+                    ccTexts[i].setText(ccNames[i] + ': ' + (cycle.cc[i] | 0))
+                    ccTexts[i].setY(10 + (20 - ccTexts[i].getHeight()) / 2)
             mainLayer.draw()

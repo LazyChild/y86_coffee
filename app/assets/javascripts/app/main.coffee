@@ -107,3 +107,7 @@ define ['jquery', 'FileSaver', './Painter', './Simulator'], ($, saveAs, Painter,
     $(window).on 'resizeEnd orientationChange', ->
         $('#container').empty()
         painter.render()
+
+    $('#test').on('click', ->
+        painter.renderF_D()
+    )
