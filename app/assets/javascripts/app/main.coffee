@@ -77,6 +77,17 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
         if v.W_pc?
             $('#line_' + v.W_pc + ' .status').html 'W'
 
+        if $('.highlight').length is 1
+            # Update the scroll state
+            height = $('#code').get(0).clientHeight
+            pos = $('.highlight').offset().top - $('#code').offset().top
+            scrollTop = $('#code').get(0).scrollTop
+            scrollHeight = $('#code').get(0).scrollHeight
+            if pos < 0 then scrollTop = Math.max(0, scrollTop + pos - height / 2)
+            if pos > height then scrollTop = Math.min(scrollTop + pos - height / 2, scrollHeight)
+            $('#code').get(0).scrollTop = scrollTop
+
+
     # Add actions after document ready.
     $ ->
         painter.render()

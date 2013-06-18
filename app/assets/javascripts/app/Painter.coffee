@@ -213,7 +213,7 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             ccTexts = []
             for i in [0..2]
                 rect = basicRect.clone
-                    x: i * width + 320
+                    x: i * width + 310
                     y: 10
                     fill: colors.white
                     width: width
