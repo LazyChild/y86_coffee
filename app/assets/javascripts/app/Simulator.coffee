@@ -1,6 +1,8 @@
 # The pipeline follows the CSAPP:2nd edition
 define ['./Utils'], (Utils) ->
     class
+        constructor: ->
+
         # Represents the report.
         report: []
         # Represents the cycles.
@@ -98,7 +100,8 @@ define ['./Utils'], (Utils) ->
         starting_up = 0
 
         # Load the *.yo file from the text.
-        constructor: (text) ->
+        load: (text) ->
+            result = {}
             lines = text.split('\n')
             enviroment =
                 reg: [0, 0, 0, 0, 0, 0, 0, 0]
@@ -112,7 +115,7 @@ define ['./Utils'], (Utils) ->
             @cycles[0].variables.f_predPC = 0
             for line in lines
                 part = line.trim().split('|')
-                if part.length isnt 2 then return null
+                if part.length isnt 2 then continue
 
                 if part[0] is '' then continue
                 words = part[0].trim().split(/:\s?/)
@@ -120,8 +123,10 @@ define ['./Utils'], (Utils) ->
                 if words[1] is '' then continue
 
                 address = Utils.hex2num(words[0])
+                result[address] = part[1]
                 for i in [0..words[1].length - 1] by 2
                     @cycles[0].memory[address++] = Utils.hex2num(words[1][i] + words[1][i + 1])
+            return result
 
         doReport: (n) ->
             now = @cycles[n]

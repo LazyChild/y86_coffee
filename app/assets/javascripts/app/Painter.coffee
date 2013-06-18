@@ -250,7 +250,7 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                 shadowBlur: -1
                 shadowOffset: 1
             mainStage.add(infoLayer)
-            @f_render()
+            @renderMain()
 
         renderMain: ->
             if mainLayer? then mainLayer.remove()
@@ -296,22 +296,6 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             )
             mainLayer.add(rect)
 
-        # Add tooltips to f
-        f_addTooltip: ->
-            @genTooltip(75, 210, 45, 85, 'f_stat', -1)
-            @genTooltip(5, 350, 75, 110, 'instr_valid', 0)
-            @genTooltip(635, 285, 75, 110, 'need_valC', 0)
-            @genTooltip(635, 390, 75, 110, 'need_regids', 0)
-            @genTooltip(185, 525, 45, 85, 'f_icode', 1)
-            @genTooltip(275, 525, 45, 85, 'f_ifun', 1)
-            @genTooltip(300, 890, 165, 135, 'f_pc', 8)
-            @genTooltip(1015, 185, 115, 135, 'f_predPC', 8)
-            @genTooltip(1169, 0, 22, 92, 'M_icode', 1)
-            @genTooltip(1201, 47, 22, 75, 'M_Cnd', 0)
-            @genTooltip(1237, 92, 22, 81, 'M_valA', 8)
-            @genTooltip(1271, 139, 22, 95, 'W_icode', 1)
-            @genTooltip(1304, 184, 22, 88, 'W_valM', 8)
-            @genTooltip(62, 773, 22, 127, 'imem_error', 0)
 
         # Generate a rectangle
         genRect: (x, y, width, prefix, name) ->
@@ -330,7 +314,34 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             text.setY(text.getAttr('oldY') + (58 - text.getHeight()) / 2)
             mainLayer.add(text)
 
-        #Add rectangles to f
+        # Generate a line
+        genLine: (points, width, name, from) ->
+            line = new K.Line
+                name: name
+                from: from
+                points: points
+                stroke: colors.red
+                strokeWidth: width
+            mainLayer.add(line)
+
+        # Add tooltips to f
+        f_addTooltip: ->
+            @genTooltip(75, 210, 45, 85, 'f_stat', -1)
+            @genTooltip(5, 350, 75, 110, 'instr_valid', 0)
+            @genTooltip(635, 285, 75, 110, 'need_valC', 0)
+            @genTooltip(635, 390, 75, 110, 'need_regids', 0)
+            @genTooltip(185, 525, 45, 85, 'f_icode', 1)
+            @genTooltip(275, 525, 45, 85, 'f_ifun', 1)
+            @genTooltip(300, 890, 165, 135, 'f_pc', 8)
+            @genTooltip(1015, 185, 115, 135, 'f_predPC', 8)
+            @genTooltip(1169, 0, 22, 92, 'M_icode', 1)
+            @genTooltip(1201, 47, 22, 75, 'M_Cnd', 0)
+            @genTooltip(1237, 92, 22, 81, 'M_valA', 8)
+            @genTooltip(1271, 139, 22, 95, 'W_icode', 1)
+            @genTooltip(1304, 184, 22, 88, 'W_valM', 8)
+            @genTooltip(62, 773, 22, 127, 'imem_error', 0)
+
+        # Add rectangles to f
         f_addRects: ->
             @genRect(96, 101, 85, 'D_', 'stat')
             @genRect(183, 101, 85, 'D_', 'icode')
@@ -341,15 +352,7 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             @genRect(806, 101, 175, 'D_', 'valP')
             @genRect(278, 1111, 175, 'F_', 'predPC')
 
-        genLine: (points, width, name, from) ->
-            line = new K.Line
-                name: name
-                from: from
-                points: points
-                stroke: colors.red
-                strokeWidth: 6
-            mainLayer.add(line)
-
+        # Add lines to f
         f_addLines: ->
             @genLine([1245, 125, 1245, 977, 455, 977], 6, 'M_valA', 'f_pc_from')
             @genLine([1312, 215, 1312, 1029, 455, 1029], 6, 'W_valM', 'f_pc_from')
