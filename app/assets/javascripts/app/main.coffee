@@ -132,6 +132,14 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
             $(@).html('play')
     )
 
+    $('#stage').change ->
+        switch $(@).val()
+            when 'main' then painter.renderMain()
+            when 'f' then painter.f_render()
+            when 'd' then painter.d_render()
+            when 'e' then painter.e_render()
+            when 'm' then painter.m_render()
+
     # Deal with the window resize.
     $(window).on('resize', ->
         if @resizeTimeout
@@ -144,7 +152,3 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
     $(window).on 'resizeEnd orientationChange', ->
         $('#container').empty()
         painter.render()
-
-    $('#test').on('click', ->
-        painter.f_render()
-    )
