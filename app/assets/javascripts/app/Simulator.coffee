@@ -250,24 +250,39 @@ define ['./Utils'], (Utils) ->
                     if v.D_icode in [I_RRMOVL, I_RMMOVL, I_OPL, I_PUSHL] then v.D_rA
                     else if v.D_icode in [I_POPL, I_RET] then REG_ESP
                     else REG_NONE
+                v.d_srcA_from =
+                    if v.D_icode in [I_RRMOVL, I_RMMOVL, I_OPL, I_PUSHL] then 'D_rA'
+                    else if v.D_icode in [I_POPL, I_RET] then '%esp'
+                    else '%none'
 
                 v.d_srcB =
                     if v.D_icode in [I_OPL, I_RMMOVL, I_MRMOVL] then v.D_rB
                     else if v.D_icode in [I_PUSHL, I_POPL, I_CALL, I_RET] then REG_ESP
                     else REG_NONE
+                v.d_srcB_from =
+                    if v.D_icode in [I_OPL, I_RMMOVL, I_MRMOVL] then 'D_rB'
+                    else if v.D_icode in [I_PUSHL, I_POPL, I_CALL, I_RET] then '%esp'
+                    else '%none'
 
                 v.d_dstE =
                     if v.D_icode in [I_RRMOVL, I_IRMOVL, I_OPL] then v.D_rB
                     else if v.D_icode in [I_PUSHL, I_POPL, I_CALL, I_RET] then REG_ESP
                     else REG_NONE
+                v.d_dstE_from =
+                    if v.D_icode in [I_RRMOVL, I_IRMOVL, I_OPL] then 'D_rB'
+                    else if v.D_icode in [I_PUSHL, I_POPL, I_CALL, I_RET] then '%esp'
+                    else '%none'
 
                 v.d_dstM =
                     if v.D_icode in [I_MRMOVL, I_POPL] then v.D_rA
                     else REG_NONE
+                v.d_dstM_from =
+                    if v.D_icode in [I_MRMOVL, I_POPL] then 'D_rA'
+                    else '%none'
 
                 # Read value A from register file
-                d_rvalA = now.reg[v.d_srcA]
-                d_rvalB = now.reg[v.d_srcB]
+                v.d_rvalA = now.reg[v.d_srcA]
+                v.d_rvalB = now.reg[v.d_srcB]
 
                 v.d_valA =
                     if v.D_icode in [I_CALL, I_JXX] then v.D_valP
@@ -276,7 +291,15 @@ define ['./Utils'], (Utils) ->
                     else if v.d_srcA is v.M_dstE then v.M_valE
                     else if v.d_srcA is v.W_dstM then v.W_valM
                     else if v.d_srcA is v.W_dstE then v.W_valE
-                    else d_rvalA
+                    else v.d_rvalA
+                v.d_valA_from =
+                    if v.D_icode in [I_CALL, I_JXX] then 'D_valP'
+                    else if v.d_srcA is v.e_dstE then 'e_valE'
+                    else if v.d_srcA is v.M_dstM then 'm_valM'
+                    else if v.d_srcA is v.M_dstE then 'M_valE'
+                    else if v.d_srcA is v.W_dstM then 'W_valM'
+                    else if v.d_srcA is v.W_dstE then 'W_valE'
+                    else 'd_rvalA'
 
                 v.d_valB =
                     if v.d_srcB is v.e_dstE then v.e_valE
@@ -284,7 +307,14 @@ define ['./Utils'], (Utils) ->
                     else if v.d_srcB is v.M_dstE then v.M_valE
                     else if v.d_srcB is v.W_dstM then v.W_valM
                     else if v.d_srcB is v.W_dstE then v.W_valE
-                    else d_rvalB
+                    else v.d_rvalB
+                v.d_valB_from =
+                    if v.d_srcB is v.e_dstE then 'e_valE'
+                    else if v.d_srcB is v.M_dstM then 'm_valM'
+                    else if v.d_srcB is v.M_dstE then 'M_valE'
+                    else if v.d_srcB is v.W_dstM then 'W_valM'
+                    else if v.d_srcB is v.W_dstE then 'W_valE'
+                    else 'd_rvalB'
 
                 # Write back
                 if v.W_dstE isnt REG_NONE

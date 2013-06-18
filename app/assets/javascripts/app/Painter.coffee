@@ -110,7 +110,6 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             stage.addRect 15, colors.blue
             stage.addRect 70, colors.white, 'valP'
             stage.addRect 115, colors.blue
-            #stage.addRect 40, colors.white, 'pc'
             return stage
 
         # Generate the execute stage.
@@ -131,7 +130,6 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             stage.addRect 30, colors.white, 'dstM'
             stage.addRect 30, colors.white, 'srcA'
             stage.addRect 30, colors.white, 'srcB'
-            #stage.addRect 40, colors.white, 'pc'
             return stage
 
         # Generate the memory stage
@@ -153,7 +151,6 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             stage.addRect 30, colors.white, 'dstE'
             stage.addRect 30, colors.white, 'dstM'
             stage.addRect 60, colors.blue
-            #stage.addRect 40, colors.white, 'pc'
             return stage
 
         # Generate the writeback stage.
@@ -250,7 +247,7 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                 shadowBlur: -1
                 shadowOffset: 1
             mainStage.add(infoLayer)
-            @renderMain()
+            @d_render()
 
         renderMain: ->
             if mainLayer? then mainLayer.remove()
@@ -272,7 +269,7 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
         genTooltip: (x, y, height, width, id, len)->
             rect = new K.Rect
                 id: id
-#                fill: colors.red
+                fill: colors.red
                 x: x
                 y: y
                 height: height
@@ -368,10 +365,9 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             image = new Image()
             that = @
             image.onload = ->
-                scale = 800 / image.width * 0.55
+                scale = 800 / image.width * 0.62
                 mainLayer = new K.Layer
-                    x: 20
-                    y: 20
+                    y: 10
                     scale: scale
 
                 img = new K.Image
@@ -386,6 +382,84 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                 mainStage.add(mainLayer)
                 that.show()
             image.src = basePath + 'F-D.png'
+
+        # Add lines to d
+        d_addLines: ->
+            @genLine([1463, 73, 1463, 469, 984, 469, 984, 433], 6, 'e_valE', 'd_valA_from')
+            @genLine([1463, 73, 1463, 469, 777, 469, 777, 433], 6, 'e_valE', 'd_valB_from')
+            @genLine([1511, 150, 1511, 517, 954, 517, 954, 433], 6, 'M_valE', 'd_valA_from')
+            @genLine([1511, 150, 1511, 517, 747, 517, 747, 433], 6, 'M_valE', 'd_valB_from')
+            @genLine([1561, 227, 1561, 566, 924, 566, 924, 433], 6, 'm_valM', 'd_valA_from')
+            @genLine([1561, 227, 1561, 566, 717, 566, 717, 433], 6, 'm_valM', 'd_valB_from')
+            @genLine([1608, 314, 1608, 615, 894, 615, 894, 433], 6, 'W_valM', 'd_valA_from')
+            @genLine([1608, 314, 1608, 615, 687, 615, 687, 433], 6, 'W_valM', 'd_valB_from')
+            @genLine([1655, 398, 1655, 663, 864, 663, 864, 433], 6, 'W_valE', 'd_valA_from')
+            @genLine([1655, 398, 1655, 663, 657, 663, 657, 433], 6, 'W_valE', 'd_valB_from')
+            @genLine([736, 770, 736, 749, 627, 749, 627, 433], 6, 'd_rvalA', 'd_valA_from')
+            @genLine([900, 770, 900, 750, 834, 750, 834, 433], 6, 'd_rvalB', 'd_valB_from')
+            @genLine([785, 1293, 785, 1145, 605, 1145, 605, 433], 6, 'D_valP', 'd_valA_from')
+
+            @genLine([474, 1293, 474, 1274, 1049, 1274, 1049, 1188], 3, 'D_rB', 'd_dstE_from')
+            @genLine([474, 1293, 474, 1274, 1316, 1274, 1316, 1188], 3, 'D_rB', 'd_srcB_from')
+            @genLine([394, 1293, 394, 1241, 1138, 1241, 1138, 1188], 3, 'D_rA', 'd_dstM_from')
+            @genLine([394, 1293, 394, 1241, 1228, 1241, 1228, 1188], 3, 'D_rA', 'd_srcA_from')
+
+        # Add rectangles to d
+        d_addRects: ->
+            @genRect(93, 224, 85, 'E_', 'stat')
+            @genRect(179, 224, 85, 'E_', 'icode')
+            @genRect(264, 224, 85, 'E_', 'ifun')
+            @genRect(440, 224, 175, 'E_', 'valC')
+            @genRect(614, 224, 175, 'E_', 'valA')
+            @genRect(832, 224, 175, 'E_', 'valB')
+            @genRect(1008, 224, 85, 'E_', 'dstE')
+            @genRect(1095, 224, 85, 'E_', 'dstM')
+            @genRect(1183, 224, 85, 'E_', 'srcA')
+            @genRect(1271, 224, 85, 'E_', 'srcB')
+
+            @genRect(92, 1297, 85, 'D_', 'stat')
+            @genRect(177, 1297, 85, 'D_', 'icode')
+            @genRect(265, 1297, 85, 'D_', 'ifun')
+            @genRect(352, 1297, 85, 'D_', 'rA')
+            @genRect(439, 1297, 85, 'D_', 'rB')
+            @genRect(525, 1297, 175, 'D_', 'valC')
+            @genRect(700, 1297, 175, 'D_', 'valP')
+
+        # Add tooltips to d
+        d_addTooltips: ->
+            @genTooltip(595, 320, 90, 200, 'd_valA', 8)
+            @genTooltip(825, 320, 90, 185, 'd_valB', 8)
+            @genTooltip(1005, 1130, 40, 85, 'd_dstE', 1)
+            @genTooltip(1095, 1130, 40, 85, 'd_dstM', 1)
+            @genTooltip(1185, 1130, 40, 85, 'd_srcA', 1)
+            @genTooltip(1275, 1130, 40, 85, 'd_srcB', 1)
+
+            @genTooltip(1446, 0, 21, 75, 'e_dstE', 1)
+
+        # Render the d stage
+        d_render: ->
+            if mainLayer? then mainLayer.remove()
+            infoLayer.show()
+            image = new Image()
+            that = @
+            image.onload = ->
+                scale = 800 / image.width * 0.62
+                mainLayer = new K.Layer
+                    y: 10
+                    scale: scale
+                img = new K.Image
+                    width: image.width
+                    height: image.height
+                    image: image
+                mainLayer.add(img)
+
+                that.d_addLines()
+                that.d_addRects()
+                that.d_addTooltips()
+
+                mainStage.add(mainLayer)
+                #that.show()
+            image.src = basePath + 'D-E.png'
 
         # Change the string into state
         strToStat: (str) ->
