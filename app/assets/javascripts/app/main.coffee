@@ -34,7 +34,6 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
         reader = new FileReader()
         reader.onload = (e) ->
             codes = simulator.load(e.target.result)
-            if codes is null then
             simulator.run()
             report = simulator.report.join('\n')
             console.log(report)
@@ -134,11 +133,11 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
 
     $('#stage').change ->
         switch $(@).val()
-            when 'main' then painter.renderMain()
             when 'f' then painter.f_render()
             when 'd' then painter.d_render()
             when 'e' then painter.e_render()
             when 'm' then painter.m_render()
+            else painter.renderMain()
 
     # Deal with the window resize.
     $(window).on('resize', ->

@@ -247,7 +247,7 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                 shadowBlur: -1
                 shadowOffset: 1
             mainStage.add(infoLayer)
-            @d_render()
+            @renderMain()
 
         renderMain: ->
             if mainLayer? then mainLayer.remove()
@@ -269,7 +269,6 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
         genTooltip: (x, y, height, width, id, len)->
             rect = new K.Rect
                 id: id
-                fill: colors.red
                 x: x
                 y: y
                 height: height
@@ -292,7 +291,6 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                 infoLayer.draw()
             )
             mainLayer.add(rect)
-
 
         # Generate a rectangle
         genRect: (x, y, width, prefix, name) ->
@@ -385,16 +383,16 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
 
         # Add lines to d
         d_addLines: ->
-            @genLine([1463, 73, 1463, 469, 984, 469, 984, 433], 6, 'e_valE', 'd_valA_from')
-            @genLine([1463, 73, 1463, 469, 777, 469, 777, 433], 6, 'e_valE', 'd_valB_from')
-            @genLine([1511, 150, 1511, 517, 954, 517, 954, 433], 6, 'M_valE', 'd_valA_from')
-            @genLine([1511, 150, 1511, 517, 747, 517, 747, 433], 6, 'M_valE', 'd_valB_from')
-            @genLine([1561, 227, 1561, 566, 924, 566, 924, 433], 6, 'm_valM', 'd_valA_from')
-            @genLine([1561, 227, 1561, 566, 717, 566, 717, 433], 6, 'm_valM', 'd_valB_from')
-            @genLine([1608, 314, 1608, 615, 894, 615, 894, 433], 6, 'W_valM', 'd_valA_from')
-            @genLine([1608, 314, 1608, 615, 687, 615, 687, 433], 6, 'W_valM', 'd_valB_from')
-            @genLine([1655, 398, 1655, 663, 864, 663, 864, 433], 6, 'W_valE', 'd_valA_from')
-            @genLine([1655, 398, 1655, 663, 657, 663, 657, 433], 6, 'W_valE', 'd_valB_from')
+            @genLine([1463, 73, 1463, 469, 777, 469, 777, 433], 6, 'e_valE', 'd_valA_from')
+            @genLine([1463, 73, 1463, 469, 984, 469, 984, 433], 6, 'e_valE', 'd_valB_from')
+            @genLine([1511, 150, 1511, 517, 747, 517, 747, 433], 6, 'M_valE', 'd_valA_from')
+            @genLine([1511, 150, 1511, 517, 954, 517, 954, 433], 6, 'M_valE', 'd_valB_from')
+            @genLine([1561, 227, 1561, 566, 717, 566, 717, 433], 6, 'm_valM', 'd_valA_from')
+            @genLine([1561, 227, 1561, 566, 924, 566, 924, 433], 6, 'm_valM', 'd_valB_from')
+            @genLine([1608, 314, 1608, 615, 687, 615, 687, 433], 6, 'W_valM', 'd_valA_from')
+            @genLine([1608, 314, 1608, 615, 894, 615, 894, 433], 6, 'W_valM', 'd_valB_from')
+            @genLine([1655, 398, 1655, 663, 657, 663, 657, 433], 6, 'W_valE', 'd_valA_from')
+            @genLine([1655, 398, 1655, 663, 864, 663, 864, 433], 6, 'W_valE', 'd_valB_from')
             @genLine([736, 770, 736, 749, 627, 749, 627, 433], 6, 'd_rvalA', 'd_valA_from')
             @genLine([900, 770, 900, 750, 834, 750, 834, 433], 6, 'd_rvalB', 'd_valB_from')
             @genLine([785, 1293, 785, 1145, 605, 1145, 605, 433], 6, 'D_valP', 'd_valA_from')
@@ -435,6 +433,18 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
             @genTooltip(1275, 1130, 40, 85, 'd_srcB', 1)
 
             @genTooltip(1446, 0, 21, 75, 'e_dstE', 1)
+            @genTooltip(1466, 43, 21, 73, 'e_valE', 8)
+            @genTooltip(1486, 88, 21, 81, 'M_dstE', 1)
+            @genTooltip(1514, 124, 21, 80, 'M_valE', 8)
+            @genTooltip(1538, 165, 21, 84, 'M_dstM', 1)
+            @genTooltip(1562, 202, 21, 83, 'm_valM', 8)
+            @genTooltip(1583, 242, 21, 88, 'W_dstM', 1)
+            @genTooltip(1607, 287, 21, 86, 'W_valM', 8)
+            @genTooltip(1630, 329, 21, 84, 'W_dstE', 1)
+            @genTooltip(1656, 369, 21, 84, 'W_valE', 8)
+
+            @genTooltip(697, 721, 21, 82, 'd_rvalA', 8)
+            @genTooltip(856, 721, 21, 82, 'd_rvalB', 8)
 
         # Render the d stage
         d_render: ->
@@ -458,8 +468,129 @@ define ['jquery', 'kinetic', './Utils'], ($, K, Utils) ->
                 that.d_addTooltips()
 
                 mainStage.add(mainLayer)
-                #that.show()
+                that.show()
             image.src = basePath + 'D-E.png'
+
+        # Add lines to e stage
+        e_addLines: ->
+            @genLine([549, 696, 549, 480], 6, 'E_valC', 'aluA_from')
+            @genLine([671, 696, 671, 661, 580, 661, 580, 480], 6, 'E_valA', 'aluA_from')
+
+        # Add rectangles to e stage
+        e_addRects: ->
+            @genRect(95, 4, 85, 'M_', 'stat')
+            @genRect(184, 4, 85, 'M_', 'icode')
+            @genRect(449, 4, 85, 'M_', 'Cnd')
+            @genRect(539, 4, 175, 'M_', 'valE')
+            @genRect(718, 4, 175, 'M_', 'valA')
+            @genRect(986, 4, 85, 'M_', 'dstE')
+            @genRect(1076, 4, 85, 'M_', 'dstM')
+
+            @genRect(95, 700, 85, 'E_', 'stat')
+            @genRect(183, 700, 85, 'E_', 'icode')
+            @genRect(271, 700, 85, 'E_', 'ifun')
+            @genRect(405, 700, 175, 'E_', 'valC')
+            @genRect(584, 700, 175, 'E_', 'valA')
+            @genRect(763, 700, 175, 'E_', 'valB')
+            @genRect(986, 700, 85, 'E_', 'dstE')
+            @genRect(1075, 700, 85, 'E_', 'dstM')
+            @genRect(1165, 700, 85, 'E_', 'srcA')
+            @genRect(1254, 700, 85, 'E_', 'srcB')
+
+        # Add tooltips to e stage
+        e_addTooltips: ->
+            @genTooltip(337, 383, 75, 100, 'set_cc', 0)
+            @genTooltip(498, 383, 75, 105, 'aluA', 8)
+            @genTooltip(646, 383, 75, 105, 'aluB', 8)
+            @genTooltip(834, 257, 75, 115, 'alufun', 1)
+            @genTooltip(989, 157, 60, 85, 'e_dstE', 8)
+
+            @genTooltip(1390, 91, 21, 75, 'e_valE', 8)
+            @genTooltip(1390, 121, 21, 77, 'e_dstE', 1)
+            @genTooltip(495, 148, 21, 72, 'e_Cnd', 0)
+            @genTooltip(4, 392, 21, 78, 'W_stat', 0)
+            @genTooltip(8, 428, 21, 74, 'm_stat', 0)
+
+        # Render the e stage
+        e_render: ->
+            if mainLayer? then mainLayer.remove()
+            infoLayer.show()
+            image = new Image()
+            that = @
+            image.onload = ->
+                scale = 800 / image.width * 0.62
+                mainLayer = new K.Layer
+                    y: 50
+                    scale: scale
+                img = new K.Image
+                    width: image.width
+                    height: image.height
+                    image: image
+                mainLayer.add(img)
+
+                that.e_addLines()
+                that.e_addRects()
+                that.e_addTooltips()
+
+                mainStage.add(mainLayer)
+                that.show()
+            image.src = basePath + 'E-M.png'
+
+        # Add lines to m stage
+        m_addLines: ->
+            @genLine([685, 704, 685, 679, 773, 679, 773, 633], 6, 'M_valE', 'mem_addr_from')
+            @genLine([863, 704, 863, 650, 818, 650, 818, 633], 6, 'M_valA', 'mem_addr_from')
+
+        # Add rectangles to m stage
+        m_addRectangles: ->
+            @genRect(150, 222, 80, 'W_', 'stat')
+            @genRect(235, 222, 90, 'W_', 'icode')
+            @genRect(596, 222, 175, 'W_', 'valE')
+            @genRect(774, 222, 175, 'W_', 'valM')
+            @genRect(1041, 222, 85, 'W_', 'dstE')
+            @genRect(1130, 222, 85, 'W_', 'dstM')
+
+            @genRect(150, 708, 80, 'M_', 'stat')
+            @genRect(235, 708, 90, 'M_', 'icode')
+            @genRect(419, 708, 85, 'M_', 'Cnd')
+            @genRect(596, 708, 175, 'M_', 'valE')
+            @genRect(774, 708, 175, 'M_', 'valA')
+            @genRect(1041, 708, 85, 'M_', 'dstE')
+            @genRect(1130, 708, 85, 'M_', 'dstM')
+
+        # Add tooltips to m stage
+        m_addTooltips: ->
+            @genTooltip(752, 556, 60, 85, 'mem_addr', 8)
+            @genTooltip(508, 376, 75, 115, 'mem_read', 0)
+            @genTooltip(508, 473, 75, 115, 'mem_write', 0)
+            @genTooltip(147, 324, 60, 85, 'm_stat', 0)
+            @genTooltip(408, 316, 21, 136, 'dmem_error', 0)
+            @genTooltip(1413, 351, 21, 85, 'm_valM', 8)
+
+        # Render the m stage
+        m_render: ->
+            if mainLayer? then  mainLayer.remove()
+            infoLayer.show()
+            image = new Image()
+            that = @
+            image.onload = ->
+                scale = 800 / image.width * 0.62
+                mainLayer = new K.Layer
+                    y: 50
+                    scale: scale
+                img = new K.Image
+                    width: image.width
+                    height: image.height
+                    image: image
+                mainLayer.add(img)
+
+                that.m_addLines()
+                that.m_addRectangles()
+                that.m_addTooltips()
+
+                mainStage.add(mainLayer)
+                that.show()
+            image.src = basePath + 'M-W.png'
 
         # Change the string into state
         strToStat: (str) ->

@@ -252,8 +252,6 @@ define ['./Utils'], (Utils) ->
                     else REG_NONE
                 v.d_srcA_from =
                     if v.D_icode in [I_RRMOVL, I_RMMOVL, I_OPL, I_PUSHL] then 'D_rA'
-                    else if v.D_icode in [I_POPL, I_RET] then '%esp'
-                    else '%none'
 
                 v.d_srcB =
                     if v.D_icode in [I_OPL, I_RMMOVL, I_MRMOVL] then v.D_rB
@@ -261,8 +259,6 @@ define ['./Utils'], (Utils) ->
                     else REG_NONE
                 v.d_srcB_from =
                     if v.D_icode in [I_OPL, I_RMMOVL, I_MRMOVL] then 'D_rB'
-                    else if v.D_icode in [I_PUSHL, I_POPL, I_CALL, I_RET] then '%esp'
-                    else '%none'
 
                 v.d_dstE =
                     if v.D_icode in [I_RRMOVL, I_IRMOVL, I_OPL] then v.D_rB
@@ -270,15 +266,12 @@ define ['./Utils'], (Utils) ->
                     else REG_NONE
                 v.d_dstE_from =
                     if v.D_icode in [I_RRMOVL, I_IRMOVL, I_OPL] then 'D_rB'
-                    else if v.D_icode in [I_PUSHL, I_POPL, I_CALL, I_RET] then '%esp'
-                    else '%none'
 
                 v.d_dstM =
                     if v.D_icode in [I_MRMOVL, I_POPL] then v.D_rA
                     else REG_NONE
                 v.d_dstM_from =
                     if v.D_icode in [I_MRMOVL, I_POPL] then 'D_rA'
-                    else '%none'
 
                 # Read value A from register file
                 v.d_rvalA = now.reg[v.d_srcA]
@@ -349,19 +342,22 @@ define ['./Utils'], (Utils) ->
                     log "\tExecute: instr = #{iname[hpack(v.E_icode, v.E_ifun)]}, cc = Z=#{ZF}, S=#{SF}, O=#{OF}, branch #{insert_word}taken"
 
                 # Get the alu value A
-                aluA =
+                v.aluA =
                     if v.E_icode in [I_RRMOVL, I_OPL] then v.E_valA
                     else if v.E_icode in [I_IRMOVL, I_RMMOVL, I_MRMOVL] then v.E_valC
                     else if v.E_icode in [I_CALL, I_PUSHL] then -4
                     else if v.E_icode in [I_RET, I_POPL] then 4
+                v.aluA_from =
+                    if v.E_icode in [I_RRMOVL, I_OPL] then 'E_valA'
+                    else if v.E_icode in [I_IRMOVL, I_RMMOVL, I_MRMOVL] then 'E_valC'
 
                 # Get the alu value B
-                aluB =
+                v.aluB =
                     if v.E_icode in [I_RMMOVL, I_MRMOVL, I_OPL, I_CALL, I_PUSHL, I_RET, I_POPL] then v.E_valB
                     else if v.E_icode in [I_RRMOVL, I_IRMOVL] then 0
 
                 # Get the alu function
-                alufun =
+                v.alufun =
                     if v.E_icode is I_OPL then v.E_ifun
                     else ALU_ADD
 
@@ -378,8 +374,8 @@ define ['./Utils'], (Utils) ->
                         when ALU_XOR then aluA ^ aluB
                         else undefined
 
-                v.e_valE = compute_alu(aluA, aluB, alufun)
-                log "\tExecute: ALU: #{oname[alufun]} #{n2h(aluA)} #{n2h(aluB)} --> #{n2h(v.e_valE)}"
+                v.e_valE = compute_alu(v.aluA, v.aluB, v.alufun)
+                log "\tExecute: ALU: #{oname[v.alufun]} #{n2h(v.aluA)} #{n2h(v.aluB)} --> #{n2h(v.e_valE)}"
 
                 # Compute the condition code.
                 compute_cc = (aluA, aluB, alufun) ->
@@ -397,10 +393,10 @@ define ['./Utils'], (Utils) ->
                     OF = gen_of()
                     [ZF, SF, OF]
 
-                set_cc =
+                v.set_cc =
                     (v.E_icode is I_OPL) and not(v.m_stat in [STAT_ADR, STAT_INS, STAT_HLT]) and not(v.W_stat in [STAT_ADR, STAT_INS, STAT_HLT])
-                if set_cc
-                    now.cc = compute_cc(aluA, aluB, alufun)
+                if v.set_cc
+                    now.cc = compute_cc(v.aluA, v.aluB, v.alufun)
                     [ZF, SF, OF] = now.cc
                     log "\tExecute: New cc = Z=#{ZF} S=#{SF} O=#{OF}"
 
@@ -412,36 +408,39 @@ define ['./Utils'], (Utils) ->
 
             ################################## Perform the memory stage #######################################
             doMemoryStage = ->
-                dmem_error = false
+                v.dmem_error = false
 
-                mem_addr =
+                v.mem_addr =
                     if v.M_icode in [I_RMMOVL, I_PUSHL, I_CALL, I_MRMOVL] then v.M_valE
                     else if v.M_icode in [I_POPL, I_RET] then v.M_valA
+                v.mem_addr_from =
+                    if v.M_icode in [I_RMMOVL, I_PUSHL, I_CALL, I_MRMOVL] then 'M_valE'
+                    else if v.M_icode in [I_POPL, I_RET] then 'M_valA'
 
                 # Read memory
-                mem_read =
+                v.mem_read =
                     v.M_icode in [I_MRMOVL, I_POPL, I_RET]
-                if mem_read
-                    v.m_valM = Utils.getWord(now.memory, mem_addr)
-                    dmem_error |= not now.memory[mem_addr + 3]?
-                    if not dmem_error
-                        log "\tMemory: Read #{n2h(v.m_valM)} from #{n2h(mem_addr)}"
+                if v.mem_read
+                    v.m_valM = Utils.getWord(now.memory, v.mem_addr)
+                    v.dmem_error = true if not now.memory[v.mem_addr + 3]?
+                    if not v.dmem_error
+                        log "\tMemory: Read #{n2h(v.m_valM)} from #{n2h(v.mem_addr)}"
 
                 # Write memory
-                mem_write =
+                v.mem_write =
                     v.M_icode in [I_RMMOVL, I_PUSHL, I_CALL]
-                mem_data = v.M_valA
-                if mem_write
-                    Utils.setWord(now.memory, mem_addr, mem_data)
-                    dmem_error |= not now.memory[mem_addr + 3]?
-                    if not dmem_error
-                        log "\tMemory: Wrote #{n2h(mem_data)} to #{n2h(mem_addr)}"
+                v.mem_data = v.M_valA
+                if v.mem_write
+                    Utils.setWord(now.memory, v.mem_addr, v.mem_data)
+                    v.dmem_error = true if not now.memory[v.mem_addr + 3]?
+                    if not v.dmem_error
+                        log "\tMemory: Wrote #{n2h(v.mem_data)} to #{n2h(v.mem_addr)}"
 
-                if dmem_error
-                    log "\tMemory: Invalid address #{n2h(mem_addr)}"
+                if v.dmem_error
+                    log "\tMemory: Invalid address #{n2h(v.mem_addr)}"
 
                 v.m_stat =
-                    if dmem_error then STAT_ADR
+                    if v.dmem_error then STAT_ADR
                     else v.M_stat
 
             ############################### Perform stall and bubble check ####################################
