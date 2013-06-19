@@ -122,6 +122,7 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
         show(++nowCircle)
         setTimeout(play, 2100 - $('#speed').val())
 
+    # Bind the play/pause button
     $('#play').on('click', ->
         playing = not playing
         if playing
@@ -131,6 +132,7 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
             $(@).html('play')
     )
 
+    # Render the stage according to the select
     $('#stage').change ->
         switch $(@).val()
             when 'f' then painter.f_render()
@@ -138,6 +140,13 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
             when 'e' then painter.e_render()
             when 'm' then painter.m_render()
             else painter.renderMain()
+
+    $('#mem_submit').click ->
+        text = $('#mem_addr').val()
+        value = simulator.cycles[nowCircle].memory[Utils.hex2num(text)]
+        value = Utils.num2hex(value, 8)
+        alert 'The content of address: ' + text + '\nis ' + value + '.'
+        $('#mem_addr').val('')
 
     # Deal with the window resize.
     $(window).on('resize', ->

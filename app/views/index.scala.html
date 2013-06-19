@@ -23,6 +23,7 @@
             float: left;
             }
             #code {
+            width: 100%;
             background: white;
             border: 2px dashed;
             height: 400px;
@@ -66,6 +67,12 @@
             .highlight {
             background: #8ED8F8;
             }
+            #controller {
+            margin-bottom: 20px;
+            }
+            #mem-controller {
+            float: right;
+            }
         </style>
     </head>
     <body>
@@ -79,11 +86,16 @@
             <button id="reset">reset</button>
             <select id="stage">
                 <option value="main">main</option>
-                <option value="f">F-D</option>
-                <option value="d">D-E</option>
-                <option value="e">E-M</option>
-                <option value="m">M-W</option>
+                <option value="f">fetch</option>
+                <option value="d">decode</option>
+                <option value="e">execute</option>
+                <option value="m">memory</option>
             </select>
+
+            <div id="mem-controller">
+                <input type="text" placeholder="Memory Address" id="mem_addr"/>
+                <input type="submit" value="display" id="mem_submit"/>
+            </div>
         </div>
         <div id="container"></div>
         <div id="right-container">
