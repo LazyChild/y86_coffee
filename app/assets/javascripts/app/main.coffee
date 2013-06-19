@@ -37,7 +37,6 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
             simulator.run()
             report = simulator.report.join('\n')
             console.log(report)
-            # saveResult(report)
 
             table = $('<table>')
             for own key, value of codes
@@ -53,7 +52,12 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
     # Perform the save file action.
     saveResult = (result) ->
         blob = new Blob([result], type: "text/plain;charset=utf-8")
-        saveAs(blob, "result.txt")
+        saveAs(blob, "report.txt")
+
+    $('#report').click ->
+        if simulator.report.length is 0
+            alert "Please load the yo file first!"
+        else saveResult(simulator.report.join('\n'))
 
     # Show the given cycle
     show = (cycle) ->
@@ -108,16 +112,10 @@ define ['jquery', 'FileSaver', './Painter', './Simulator', './Utils'], ($, saveA
             show(--nowCircle)
     )
 
-    # Deal with the reset button
-    $('#reset').on('click', ->
-        if playing then $('#play').trigger('click')
-        show(nowCircle = 1)
-    )
-
     # Play the simulator continuously
     play = ->
         if nowCircle + 1 >= simulator.cycles.length
-            playing = false
+            $('#play').trigger('click')
         if not playing then return
         show(++nowCircle)
         setTimeout(play, 2100 - $('#speed').val())
